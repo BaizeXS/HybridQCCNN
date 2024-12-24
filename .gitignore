@@ -516,5 +516,8 @@ Temporary Items
 # IDEA
 .idea/
 
-# Temp File
-temp/
+logs/
+outputs/
+pics/
+tensorboard/
+
