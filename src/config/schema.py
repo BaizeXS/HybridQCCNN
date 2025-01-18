@@ -1,6 +1,6 @@
 """Definition of the configuration data structure."""
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from pathlib import Path
 
 @dataclass
@@ -41,20 +41,26 @@ class QuantumConfig:
 
 @dataclass
 class ModelConfig:
-    """Model configuration.
+    """Model configuration
     
     Attributes:
         name: Model name
-        model_type: Type of model ("classic", "hybrid", or "custom")
-        model_kwargs: Model initialization parameters
-        quantum_config: Quantum configuration for hybrid models
-        custom_model_path: Path to custom model implementation
+        model_type: Model type ("classic", "quantum", "custom")
+        model_kwargs: Model parameters
+        quantum_config: Quantum configuration (for quantum models)
+        custom_model_path: Path to custom model code file (for custom models)
     """
     name: str
-    model_type: str
-    model_kwargs: Dict[str, Any]
+    model_type: str = "classic"
+    model_kwargs: Dict = field(default_factory=dict)
     quantum_config: Optional[QuantumConfig] = None
-    custom_model_path: Optional[str] = None
+    custom_model_path: Optional[Union[str, Path]] = None
+    
+    def __post_init__(self):
+        if self.model_type == "custom" and not self.custom_model_path:
+            raise ValueError("custom_model_path must be provided for custom models")
+        if self.custom_model_path:
+            self.custom_model_path = Path(self.custom_model_path)
 
 @dataclass
 class TrainingConfig:
