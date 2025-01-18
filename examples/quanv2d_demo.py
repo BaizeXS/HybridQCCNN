@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from src.components.quanv import Quanv2d, OutputMode, AggregationMethod
+from components.quanv import Quanv2d, OutputMode, AggregationMethod
 
 def basic_quanv2d_example():
     """

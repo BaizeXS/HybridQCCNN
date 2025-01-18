@@ -1,7 +1,7 @@
 import torch
 import pennylane as qml
 import numpy as np
-from src.components.qkernel import QKernel
+from components.qkernel import QKernel
 
 def basic_qkernel_example():
     """
