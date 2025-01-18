@@ -171,7 +171,7 @@ def test_data_config_transforms(transform_list):
 
 def test_config_serialization_types(sample_config):
     """Test serialization of different Python types"""
-    # Add some complex types to test
+    # Some complex types to test
     sample_config.data.dataset_kwargs = {
         'tuple_value': (1, 2, 3),
         'nested_tuple': [(1, 2), (3, 4)],
@@ -200,7 +200,6 @@ def test_config_serialization_types(sample_config):
         
         Path(tmp.name).unlink()
 
-# Add new test for directory structure
 def test_directory_structure(sample_config):
     """Test the directory structure properties"""
     # Test with default output directory
@@ -213,7 +212,6 @@ def test_directory_structure(sample_config):
     assert sample_config.base_dir == custom_dir
     assert sample_config.tensorboard_dir == custom_dir / "tensorboard"
 
-# Add new test for path resolution
 def test_path_resolution():
     """Test path resolution for different scenarios"""
     config = Config(
