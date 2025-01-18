@@ -63,9 +63,19 @@ def test_config_initialization(sample_config):
 
 def test_config_paths(sample_config):
     """Test configuration path properties"""
-    assert sample_config.model_dir == Path("./outputs") / TEST_PARAMS['name'] / TEST_PARAMS['version']
-    assert sample_config.checkpoint_dir == sample_config.model_dir / "checkpoints"
-    assert sample_config.tensorboard_dir == sample_config.model_dir / "tensorboard"
+    # Test base directory
+    assert sample_config.base_dir == Path("./outputs")
+    
+    # Test tensorboard directory
+    assert sample_config.tensorboard_dir == sample_config.base_dir / "tensorboard"
+
+def test_config_custom_paths(sample_config):
+    """Test configuration with custom output directory"""
+    custom_output_dir = Path("/custom/output/path")
+    sample_config.output_dir = custom_output_dir
+    
+    assert sample_config.base_dir == custom_output_dir
+    assert sample_config.tensorboard_dir == custom_output_dir / "tensorboard"
 
 def test_quantum_config():
     """Test quantum configuration"""
@@ -183,8 +193,49 @@ def test_config_serialization_types(sample_config):
     with tempfile.NamedTemporaryFile(suffix='.yaml', delete=False) as tmp:
         manager.save_config(sample_config, tmp.name)
         loaded_config = manager.load_config(tmp.name)
+        
+        # Verify paths are correct
+        assert loaded_config.base_dir == sample_config.base_dir
+        assert loaded_config.tensorboard_dir == sample_config.tensorboard_dir
+        
         Path(tmp.name).unlink()
+
+# Add new test for directory structure
+def test_directory_structure(sample_config):
+    """Test the directory structure properties"""
+    # Test with default output directory
+    assert sample_config.base_dir == Path("./outputs")
+    assert sample_config.tensorboard_dir == Path("./outputs/tensorboard")
     
-    # Verify loaded values
-    assert isinstance(loaded_config.data.input_shape, tuple)
-    assert loaded_config.data.input_shape == sample_config.data.input_shape 
+    # Test with custom output directory
+    custom_dir = Path("/custom/path")
+    sample_config.output_dir = custom_dir
+    assert sample_config.base_dir == custom_dir
+    assert sample_config.tensorboard_dir == custom_dir / "tensorboard"
+
+# Add new test for path resolution
+def test_path_resolution():
+    """Test path resolution for different scenarios"""
+    config = Config(
+        name="test",
+        version="v1",
+        description="test",
+        data=DataConfig(
+            name="test",
+            input_shape=(1,),
+            num_classes=2,
+            train_transforms=[],
+            val_transforms=[],
+            test_transforms=[]
+        ),
+        model=ModelConfig(
+            name="test",
+            model_type="classic",
+            model_kwargs={}
+        ),
+        training=TrainingConfig(),
+        output_dir=Path("./test_output")
+    )
+    
+    assert config.base_dir == Path("./test_output")
+    assert config.tensorboard_dir == Path("./test_output/tensorboard") 

@@ -105,24 +105,14 @@ class Config:
     output_dir: Path = Path("./outputs")
     
     @property
-    def model_dir(self) -> Path:
-        """Get the model directory path (outputs/model_name/version/)."""
-        return self.output_dir / self.name / self.version
-    
-    @property
-    def checkpoint_dir(self) -> Path:
-        """Get the checkpoint directory path."""
-        return self.model_dir / "checkpoints"
+    def base_dir(self) -> Path:
+        """Return the base directory for outputs"""
+        return self.output_dir
     
     @property
     def tensorboard_dir(self) -> Path:
-        """Get the TensorBoard directory path."""
-        return self.model_dir / "tensorboard"
-        
-    @property
-    def results_dir(self) -> Path:
-        """Get the results directory path."""
-        return self.model_dir / "results"
+        """Return the base directory for tensorboard"""
+        return self.base_dir / "tensorboard"
 
     def to_dict(self) -> dict:
         """Convert configuration to dictionary format."""

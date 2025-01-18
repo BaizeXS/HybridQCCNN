@@ -37,7 +37,8 @@ def basic_config_example():
     )
     
     print(f"Configuration name: {config.name}")
-    print(f"Model directory: {config.model_dir}")
+    print(f"Base directory: {config.base_dir}")
+    print(f"Tensorboard directory: {config.tensorboard_dir}")
     print(f"Configuration structure:\n{config.to_dict()}")
 
 def hybrid_model_config_example():
@@ -88,6 +89,9 @@ def hybrid_model_config_example():
     print(f"Quantum configuration:\n{config.model.quantum_config}")
     print(f"Model type: {config.model.model_type}")
     print(f"Device: {config.device}")
+    print(f"Output directory structure:")
+    print(f"  Base dir: {config.base_dir}")
+    print(f"  Tensorboard dir: {config.tensorboard_dir}")
 
 def config_manager_example():
     """
@@ -124,6 +128,7 @@ def config_manager_example():
     # Load configuration
     loaded_config = manager.load_config(save_path)
     print(f"Loaded configuration name: {loaded_config.name}")
+    print(f"Base directory: {loaded_config.base_dir}")
     print(f"Configurations match: {config.to_dict() == loaded_config.to_dict()}")
     
     # Clean up
