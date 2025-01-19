@@ -1,25 +1,38 @@
 import torch
+import numpy as np
 from typing import Dict, Tuple
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
-import numpy as np
 
 class MetricsCalculator:
-    """Metrics calculator: responsible for calculating various training and evaluation metrics"""
+    """Metrics calculator for evaluating model performance.
+    
+    This class provides methods to calculate various metrics such as loss, accuracy,
+    precision, recall, F1 score, and confusion matrix for a given set of model outputs
+    and true labels. It is designed to be used during training and evaluation phases
+    of machine learning models.
+    
+    Attributes:
+        None
+    """
     
     @staticmethod
     def calculate(outputs: torch.Tensor, targets: torch.Tensor, loss: torch.Tensor) -> Tuple[Dict[str, float], np.ndarray]:
-        """Calculate metrics for a batch of data
+        """Calculate metrics for a batch of data.
         
         Args:
-            outputs: Model outputs
-            targets: True labels
-            loss: Loss value
+            outputs (torch.Tensor): The raw output predictions from the model.
+            targets (torch.Tensor): The true labels corresponding to the outputs.
+            loss (torch.Tensor): The computed loss value for the batch.
             
         Returns:
-            A dictionary containing various metrics and a confusion matrix
+            Tuple[Dict[str, float], np.ndarray]: A tuple containing:
+                - A dictionary with keys 'loss', 'accuracy', 'precision', 'recall', and 'f1',
+                  representing the calculated metrics for the batch.
+                - A confusion matrix as a NumPy array, representing the performance of the model
+                  in classifying the input data.
         """
         # Get prediction results
-        _, predictions = torch.max(outputs, 1)
+        _, predictions = torch.max(outputs, dim=1)
         
         # Convert to numpy array for sklearn
         predictions = predictions.cpu().numpy()
@@ -44,4 +57,4 @@ class MetricsCalculator:
             labels=range(num_classes)
         )
         
-        return metrics, conf_matrix 
+        return metrics, conf_matrix

@@ -63,33 +63,33 @@ def test_train_epoch(trainer, sample_dataloader):
     assert 'recall' in metrics
     assert 'f1' in metrics
     
-    # 检查时间统计
+    # Check time statistics
     assert 'epoch_time' in metrics
     assert metrics['epoch_time'] > 0
     
-    # 检查混淆矩阵
+    # Check confusion matrix
     assert conf_matrix.shape == (TEST_PARAMS['num_classes'], TEST_PARAMS['num_classes'])
 
 def test_validation(trainer, sample_dataloader):
     """Test validation"""
     metrics, conf_matrix = trainer.validate(sample_dataloader)
     
-    # 检查基本指标
+    # Check basic metrics
     assert isinstance(metrics, dict)
     assert all(metric in metrics for metric in ['loss', 'accuracy', 'precision', 'recall', 'f1'])
-    
-    # 检查时间统计
+
+    # Check time statistics
     assert 'phase_time' in metrics
     assert metrics['phase_time'] > 0
     
-    # 检查混淆矩阵
+    # Check confusion matrix
     assert conf_matrix.shape == (TEST_PARAMS['num_classes'], TEST_PARAMS['num_classes'])
 
 def test_metrics_calculator():
-    """测试指标计算"""
+    """Test metrics calculation"""
     calculator = MetricsCalculator()
     
-    # 使用3类分类问题进行测试，与其他测试保持一致
+    # Test with 3-class classification problem
     outputs = torch.tensor([
         [0.1, 0.8, 0.1],
         [0.7, 0.2, 0.1],
@@ -105,7 +105,7 @@ def test_metrics_calculator():
     assert 0 <= metrics['precision'] <= 1
     assert 0 <= metrics['recall'] <= 1
     assert 0 <= metrics['f1'] <= 1
-    assert conf_matrix.shape == (3, 3)  # 确保是3x3的混淆矩阵
+    assert conf_matrix.shape == (3, 3)  # Ensure it's a 3x3 confusion matrix
 
 def test_training_with_scheduler(sample_model, sample_dataloader):
     """Test training with learning rate scheduler"""
@@ -139,8 +139,16 @@ def test_device_handling(device, sample_model, sample_dataloader):
         device=device
     )
     
+    # Check model and loss function devices
+    assert next(trainer.model.parameters()).device.type == device
+    # For loss function, we can check its running device by creating an example input
+    dummy_input = torch.randn(2, TEST_PARAMS['num_classes']).to(device)
+    dummy_target = torch.tensor([0, 1]).to(device)
+    dummy_loss = trainer.criterion(dummy_input, dummy_target)
+    assert dummy_loss.device.type == device
+    
     metrics, _ = trainer.train_epoch(sample_dataloader, epoch=1)
-    assert isinstance(metrics['loss'], float) 
+    assert isinstance(metrics['loss'], float)
 
 def test_googlenet_training(sample_dataloader):
     """Test training with GoogLeNet-style model"""
@@ -163,7 +171,7 @@ def test_googlenet_training(sample_dataloader):
         optimizer=torch.optim.SGD(model.parameters(), lr=0.01)
     )
     
-    assert trainer.is_googlenet  # 验证模型类型检测
+    assert trainer.is_googlenet  # Check model type detection
     metrics, conf_matrix = trainer.train_epoch(sample_dataloader, epoch=1)
     assert isinstance(metrics, dict)
     assert 'loss' in metrics 

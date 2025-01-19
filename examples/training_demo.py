@@ -24,12 +24,17 @@ def basic_training_example():
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters())
     
-    # Create trainer
+    # Add device conversion
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    criterion = criterion.to(device)
+    
+    # Initialize trainer
     trainer = Trainer(
         model=model,
         criterion=criterion,
         optimizer=optimizer,
-        device="cpu"
+        device=device
     )
     
     # Train for one epoch
@@ -37,6 +42,9 @@ def basic_training_example():
     print(f"Training metrics: {metrics}")
     print(f"Training time: {metrics['epoch_time']:.3f}s")
     print(f"Confusion matrix:\n{conf_matrix}")
+    
+    # Clean up
+    trainer.cleanup()
 
 def training_with_scheduler_example():
     """
@@ -76,6 +84,9 @@ def training_with_scheduler_example():
     val_metrics, _ = trainer.validate(val_loader)
     print(f"Validation - Loss: {val_metrics['loss']:.4f}, Accuracy: {val_metrics['accuracy']:.4f}")
     print(f"Validation time: {val_metrics['phase_time']:.3f}s")
+    
+    # Clean up
+    trainer.cleanup()
 
 def metrics_calculation_example():
     """

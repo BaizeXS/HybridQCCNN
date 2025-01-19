@@ -9,7 +9,28 @@ import time
 from .metrics import MetricsCalculator
 
 class Trainer:
-    """Trainer"""
+    """A trainer class that handles model training, validation and evaluation.
+    
+    This class provides functionality for:
+    - Training models epoch by epoch
+    - Validating model performance
+    - Evaluating model on test data
+    - Handling different model architectures (including GoogLeNet with auxiliary classifiers)
+    - Computing and logging metrics
+    - Progress tracking with tqdm
+    
+    Attributes:
+        model (torch.nn.Module): The neural network model to train.
+        criterion (torch.nn.Module): Loss function for model training.
+        optimizer (torch.optim.Optimizer): Optimization algorithm for training.
+        device (str): Device to run the model on ('cpu' or 'cuda').
+        scheduler (torch.optim.lr_scheduler._LRScheduler): Learning rate scheduler.
+        aux_weight (float): Weight for auxiliary classifiers in GoogLeNet.
+        metrics_calculator (MetricsCalculator): Calculator for various metrics.
+        logger (logging.Logger): Logger for tracking training progress.
+        is_googlenet (bool): Flag indicating if the model is GoogLeNet.
+        memory_tracking (bool): Whether to track GPU memory usage.
+    """
     
     def __init__(
         self, 
@@ -19,18 +40,20 @@ class Trainer:
         device: str = 'cpu',
         scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
         aux_weight: float = 0.4,
-        logger: Optional[logging.Logger] = None
+        logger: Optional[logging.Logger] = None,
+        memory_tracking: bool = False
     ):
-        """Initialize Trainer
+        """Initialize Trainer.
         
         Args:
-            model: Model
-            criterion: Loss function
-            optimizer: Optimizer
-            device: Device
-            scheduler: Learning rate scheduler
-            aux_weight: GoogLeNet auxiliary classifier weight
-            logger: Logger
+            model (torch.nn.Module): Neural network model to be trained.
+            criterion (torch.nn.Module): Loss function for model training.
+            optimizer (torch.optim.Optimizer): Optimization algorithm for training.
+            device (str): Device to run the model on ('cpu' or 'cuda').
+            scheduler (torch.optim.lr_scheduler._LRScheduler, optional): Learning rate scheduler.
+            aux_weight (float): Weight for GoogLeNet auxiliary classifiers. Defaults to 0.4.
+            logger (logging.Logger, optional): Logger for tracking training progress.
+            memory_tracking (bool): Whether to track GPU memory usage. Defaults to False.
         """
         self.model = model
         self.criterion = criterion
@@ -40,17 +63,28 @@ class Trainer:
         self.aux_weight = aux_weight
         self.metrics_calculator = MetricsCalculator()
         self.logger = logger or logging.getLogger(__name__)
+        self.memory_tracking = memory_tracking
         # Check if the model is a GoogLeNet model
         self.is_googlenet = 'GoogLeNet' in model.__class__.__name__
 
-
     def train_epoch(self, dataloader: DataLoader, epoch: int) -> Tuple[Dict[str, float], np.ndarray]:
-        """Train one epoch"""
+        """Train the model for one epoch.
+        
+        Args:
+            dataloader (DataLoader): DataLoader containing training data.
+            epoch (int): Current epoch number.
+            
+        Returns:
+            Tuple[Dict[str, float], np.ndarray]: A tuple containing:
+                - A dictionary with average metrics for the epoch, including loss, accuracy, precision, recall, and F1 score.
+                - A confusion matrix as a NumPy array for the epoch.
+        """
         self.model.train()
         metrics = defaultdict(float)
         total_samples = 0
         conf_matrix = None
         
+        # Start time of the epoch
         epoch_start_time = time.time()
         
         # Create progress bar
@@ -105,13 +139,26 @@ class Trainer:
         return avg_metrics, conf_matrix
 
     def validate(self, dataloader: DataLoader, phase: str = 'val') -> Tuple[Dict[str, float], np.ndarray]:
-        """Validate model"""
+        """Validate or evaluate the model on a given dataset.
+        
+        Args:
+            dataloader (DataLoader): DataLoader containing validation/test data.
+            phase (str, optional): Phase identifier ('val' or 'test'). Defaults to 'val'.
+            
+        Returns:
+            Tuple[Dict[str, float], np.ndarray]: A tuple containing:
+                - A dictionary of averaged metrics for the validation/test phase.
+                - A confusion matrix as a NumPy array for the entire validation/test set.
+        """
         self.model.eval()
         metrics = defaultdict(float)
         total_samples = 0
         conf_matrix = None
         
+        # Start time of the validation phase
         phase_start_time = time.time()
+        
+        # Create progress bar
         pbar = tqdm(dataloader, desc=f'{phase.capitalize()} Phase', leave=True)
         
         with torch.no_grad():
@@ -138,6 +185,7 @@ class Trainer:
                     'batch_time': f'{batch_time:.3f}s'
                 })
         
+        # Calculate average metrics
         avg_metrics = {name: value/total_samples for name, value in metrics.items()}
         
         # Calculate the time of the entire validation phase
@@ -155,11 +203,32 @@ class Trainer:
         return avg_metrics, conf_matrix
 
     def evaluate(self, dataloader: DataLoader) -> Tuple[Dict[str, float], np.ndarray]:
-        """Evaluate model"""
+        """Evaluate the model on test dataset.
+        
+        This is a wrapper around validate() method that sets phase to 'test'.
+        Used for final model evaluation after training is complete.
+        
+        Args:
+            dataloader (DataLoader): DataLoader containing test data.
+            
+        Returns:
+            Tuple[Dict[str, float], np.ndarray]: A tuple containing:
+                - A dictionary of averaged metrics for the test phase.
+                - A confusion matrix as a NumPy array for the test set.
+        """
         return self.validate(dataloader, phase='test')
     
-    def _train_step(self, batch) -> Tuple[Dict[str, float], np.ndarray]:
-        """Single training step"""
+    def _train_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[Dict[str, float], np.ndarray]:
+        """Perform a single training step.
+        
+        Args:
+            batch (Tuple[torch.Tensor, torch.Tensor]): A tuple of (inputs, targets) tensors.
+            
+        Returns:
+            Tuple[Dict[str, float], np.ndarray]: A tuple containing:
+                - A dictionary of metrics (loss, accuracy, etc.) for the current batch.
+                - A confusion matrix as a NumPy array for this batch.
+        """
         inputs, targets = batch
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
@@ -182,8 +251,20 @@ class Trainer:
         
         return self.metrics_calculator.calculate(output, targets, loss)
 
-    def _validate_step(self, batch) -> Tuple[Dict[str, float], np.ndarray]:
-        """Single validation step"""
+    def _validate_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[Dict[str, float], np.ndarray]:
+        """Perform a single validation/evaluation step.
+        
+        Args:
+            batch (Tuple[torch.Tensor, torch.Tensor]): A tuple of (inputs, targets) tensors.
+                
+        Returns:
+            Tuple[Dict[str, float], np.ndarray]: A tuple containing:
+                - A dictionary of batch metrics (loss, accuracy, etc.).
+                - A confusion matrix as a NumPy array for this batch.
+                
+        Note:
+            For GoogLeNet models, only the main classifier output is used during validation.
+        """
         inputs, targets = batch
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
@@ -195,3 +276,39 @@ class Trainer:
         loss = self.criterion(outputs, targets)
 
         return self.metrics_calculator.calculate(outputs, targets, loss)
+
+    def _log_memory_stats(self):
+        """Log GPU memory statistics if memory tracking is enabled.
+        
+        This method will log:
+            - Allocated memory: Currently allocated GPU memory in MB.
+            - Cached memory: Total cached (reserved) GPU memory in MB.
+            
+        Note:
+            Only logs if self.memory_tracking is True and CUDA is available.
+        """
+        if self.memory_tracking and torch.cuda.is_available():
+            allocated = torch.cuda.memory_allocated() / 1024**2
+            cached = torch.cuda.memory_reserved() / 1024**2
+            self.logger.info(f"GPU Memory: {allocated:.1f}MB allocated, {cached:.1f}MB cached")
+
+    def cleanup(self):
+        """Clean up resources used by the trainer.
+        
+        Performs the following cleanup operations:
+            1. Clears CUDA cache if GPU was used.
+            2. Removes circular references to prevent memory leaks.
+            3. Sets model, optimizer, and scheduler to None.
+            
+        Note:
+            This method should be called when the trainer is no longer needed
+            or before creating a new trainer instance.
+        """
+        # Clear CUDA cache if using GPU
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+        # Remove circular references
+        self.model = None
+        self.optimizer = None
+        self.scheduler = None
