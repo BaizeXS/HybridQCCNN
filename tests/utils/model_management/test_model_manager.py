@@ -4,6 +4,9 @@ import torch.nn as nn
 from pathlib import Path
 from utils.model_management import ModelManager
 from config import Config, ModelConfig, DataConfig, TrainingConfig
+import json
+import numpy as np
+import shutil
 
 # Test parameters
 TEST_PARAMS = {
@@ -61,6 +64,7 @@ def test_config(test_model_path):
             num_epochs=2,
             checkpoint_interval=1
         ),
+        device="cuda" if torch.cuda.is_available() else "cpu",
         output_dir=Path("./test_outputs")
     )
 
@@ -139,11 +143,86 @@ def test_model_evaluation(model_manager, test_loader):
     assert 'accuracy' in test_metrics
     assert all(0 <= test_metrics[metric] <= 1 for metric in ['accuracy', 'precision', 'recall', 'f1'])
 
+def test_metrics_saving_loading(model_manager, test_loader, test_config):
+    """Test metrics saving and loading"""
+    # Train model to generate some metrics
+    model_manager.train(test_loader, val_loader=test_loader)
+    
+    # Save checkpoint with metrics
+    epoch = 0
+    model_manager.save_checkpoint(epoch=epoch)
+    
+    # Create new manager and load metrics
+    new_manager = ModelManager(test_config, "test_model_2")
+    
+    # Load specific epoch metrics
+    metrics_path = model_manager.metrics_dir / f"metrics_epoch_{epoch}.json"
+    loaded_epoch = new_manager.load_metrics(epoch=0, metrics_path=metrics_path)
+    assert loaded_epoch == 0
+    assert len(new_manager.metrics['train']['loss']) == 1  # Only one epoch
+    
+    # Save complete history
+    history_path = model_manager.metrics_dir / "metrics_history.json"
+    history_metrics = {
+        'metrics': model_manager.metrics,
+        'conf_matrices': model_manager.conf_matrices,
+        'epoch': model_manager.config.training.num_epochs - 1
+    }
+    with open(history_path, 'w') as f:
+        json.dump(history_metrics, f, indent=2, default=lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
+    
+    # Load complete history
+    loaded_epoch = new_manager.load_metrics(metrics_path=history_path)
+    assert loaded_epoch == model_manager.config.training.num_epochs - 1
+    assert len(new_manager.metrics['train']['loss']) == model_manager.config.training.num_epochs
+    
+    # Verify metrics were loaded correctly
+    assert new_manager.metrics['train'].keys() == model_manager.metrics['train'].keys()
+    for metric in model_manager.metrics['train'].keys():
+        assert np.allclose(
+            np.array(new_manager.metrics['train'][metric]),
+            np.array(model_manager.metrics['train'][metric])
+        )
+
+def test_metrics_file_format(model_manager, test_loader):
+    """Test metrics file format and content"""
+    # Train model to generate some metrics
+    model_manager.train(test_loader, val_loader=test_loader)
+    
+    # Save metrics
+    epoch = 0
+    model_manager.save_checkpoint(epoch=epoch)
+    metrics_path = model_manager.metrics_dir / f"metrics_epoch_{epoch}.json"
+    
+    # Verify JSON format and content
+    with open(metrics_path, 'r') as f:
+        metrics_data = json.load(f)
+    
+    assert isinstance(metrics_data, dict)
+    assert 'metrics' in metrics_data
+    assert 'conf_matrices' in metrics_data
+    assert 'epoch' in metrics_data
+    assert metrics_data['epoch'] == epoch
+    
+    # Verify single epoch metrics format
+    for phase in ['train', 'val']:
+        assert phase in metrics_data['metrics']
+        assert isinstance(metrics_data['metrics'][phase], dict)
+        for metric_name, value in metrics_data['metrics'][phase].items():
+            assert isinstance(value, (int, float)) or value is None
+    
+    # Verify confusion matrix format
+    for phase in ['train', 'val']:
+        assert phase in metrics_data['conf_matrices']
+        matrix = metrics_data['conf_matrices'][phase]
+        assert isinstance(matrix, list) or matrix is None
+        if matrix is not None:
+            assert all(isinstance(row, list) for row in matrix)
+
 @pytest.fixture(autouse=True)
 def cleanup_test_dirs():
     """Clean up test directories"""
     yield
-    import shutil
     test_dirs = ['./test_outputs', './runs']  # TensorBoard logs default to ./runs
     for d in test_dirs:
         if Path(d).exists():

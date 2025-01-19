@@ -10,16 +10,36 @@ from pathlib import Path
 import numpy as np
 from typing import Union, Optional, Dict
 from models import ALL_MODELS
+import json
+from config import Config
 
 class ModelManager:
-    """Model manager: responsible for managing a single model, including building, training, testing, etc."""
+    """Model manager: responsible for managing a single model, including building, training, testing, etc.
     
-    def __init__(self, config, model_name="default"):
-        """Initialize model manager
+    This class handles model lifecycle including:
+    - Model initialization and building
+    - Training and validation
+    - Checkpointing and model weights management 
+    - Metrics tracking and logging
+    - TensorBoard visualization
+    
+    Attributes:
+        config (Config): Configuration object containing model and training parameters.
+        model_name (str): Name of the model instance.
+        device (torch.device): Device to run the model on.
+        model (nn.Module): The actual model instance.
+        logger (logging.Logger): Logger instance for this model.
+        writer (SummaryWriter): TensorBoard writer.
+        metrics (dict): Dictionary storing training/validation/test metrics.
+        conf_matrices (dict): Dictionary storing confusion matrices.
+    """
+    
+    def __init__(self, config: Config, model_name: str = "default"):
+        """Initialize model manager.
         
         Args:
-            config: Configuration object
-            model_name: Name of the model instance, used to distinguish different instances of the same model
+            config (Config): Configuration object containing model and training parameters.
+            model_name (str): Name of the model instance, used to distinguish different instances of the same model.
         """
         self.config = config
         self.model_name = model_name
@@ -29,7 +49,7 @@ class ModelManager:
         self.model_dir = config.base_dir / model_name
         self.checkpoint_dir = self.model_dir / "checkpoints"  # Store checkpoints
         self.weights_dir = self.model_dir / "weights"         # Store model weights
-        self.tensorboard_dir = config.tensorboard_dir / model_name  # tensorboard logs
+        self.tensorboard_dir = config.tensorboard_dir / model_name  # TensorBoard logs
         self.log_dir = self.model_dir / "logs"               # Log files
         self.metrics_dir = self.model_dir / "metrics"  # Store metrics and confusion matrix data
         
@@ -64,7 +84,11 @@ class ModelManager:
         }
         
     def _setup_logging(self):
-        """Set up logging"""
+        """Set up logging.
+        
+        This method configures the logger to output messages to both the console and a log file.
+        The log file is stored in the model's log directory.
+        """
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         
@@ -80,7 +104,17 @@ class ModelManager:
         self.logger.addHandler(file_handler)
 
     def _build_model(self):
-        """Build model"""
+        """Build model.
+        
+        This method constructs the model based on the configuration provided. It can load a custom model
+        or select from predefined models.
+        
+        Returns:
+            nn.Module: The constructed model instance.
+        
+        Raises:
+            ValueError: If the model type is unknown.
+        """
         if self.config.model.model_type == "custom":
             # Load custom model
             model_path = Path(self.config.model.custom_model_path)
@@ -102,11 +136,19 @@ class ModelManager:
         return model_class(**self.config.model.model_kwargs)
 
     def _get_criterion(self):
-        """Get loss function"""
+        """Get loss function.
+        
+        Returns:
+            nn.Module: The loss function to be used during training.
+        """
         return torch.nn.CrossEntropyLoss()
 
     def _get_optimizer(self):
-        """Get optimizer"""
+        """Get optimizer.
+        
+        Returns:
+            torch.optim.Optimizer: The optimizer to be used during training.
+        """
         return torch.optim.Adam(
             self.model.parameters(),
             lr=self.config.training.learning_rate,
@@ -114,7 +156,11 @@ class ModelManager:
         )
 
     def _get_scheduler(self):
-        """Get learning rate scheduler"""
+        """Get learning rate scheduler.
+        
+        Returns:
+            Optional[torch.optim.lr_scheduler._LRScheduler]: The learning rate scheduler, or None if not configured.
+        """
         if not self.config.training.scheduler_kwargs:
             return None
         return torch.optim.lr_scheduler.StepLR(
@@ -122,15 +168,27 @@ class ModelManager:
             **self.config.training.scheduler_kwargs
         )
 
-    def train(self, train_loader, val_loader=None, **kwargs):
-        """Train model"""
+    def train(
+        self, 
+        train_loader: torch.utils.data.DataLoader,
+        val_loader: Optional[torch.utils.data.DataLoader] = None,
+        **kwargs
+    ) -> None:
+        """Train model.
+        
+        Args:
+            train_loader (DataLoader): DataLoader for training data.
+            val_loader (Optional[DataLoader]): DataLoader for validation data.
+            **kwargs: Additional arguments passed to trainer.
+        """
         trainer = Trainer(
             model=self.model,
             criterion=self._get_criterion(),
             optimizer=self._get_optimizer(),
             scheduler=self._get_scheduler(),
             device=self.device,
-            logger=self.logger
+            logger=self.logger,
+            **kwargs
         )
         
         best_val_acc = 0.0
@@ -156,12 +214,19 @@ class ModelManager:
                 self.save_checkpoint(epoch)
 
     def test(self, test_loader):
-        """Test model"""
+        """Test model.
+        
+        Args:
+            test_loader (DataLoader): DataLoader for test data.
+        
+        Returns:
+            Dict[str, float]: A dictionary of metrics for the test phase.
+        """
         self.model.eval()
         trainer = Trainer(
             model=self.model,
             criterion=self._get_criterion(),
-            optimizer=self._get_optimizer(),
+            optimizer=None,
             device=self.device
         )
         test_metrics, conf_matrix = trainer.evaluate(test_loader)
@@ -169,16 +234,30 @@ class ModelManager:
         return test_metrics
 
     def predict(self, inputs):
-        """Model prediction"""
+        """Model prediction.
+        
+        Args:
+            inputs (torch.Tensor): Input data for prediction.
+        
+        Returns:
+            torch.Tensor: Predicted class indices.
+        """
         self.model.eval()
+        if not isinstance(inputs, torch.Tensor):
+            inputs = torch.tensor(inputs)
         with torch.no_grad():
             inputs = inputs.to(self.device)
             outputs = self.model(inputs)
             _, predicted = torch.max(outputs, 1)
-        return predicted
+        return predicted.cpu()
 
     def save_checkpoint(self, epoch: int, is_best: bool = False):
-        """Save checkpoint"""
+        """Save checkpoint.
+        
+        Args:
+            epoch (int): Current epoch number.
+            is_best (bool): Flag indicating if this is the best model.
+        """
         # Save model-related data
         checkpoint = {
             'epoch': epoch,
@@ -198,54 +277,155 @@ class ModelManager:
             torch.save(self.model.state_dict(), best_path)
             self.logger.info(f"Save best model weights to {best_path}")
         
-        # Save metrics and confusion matrix separately
-        metrics_data = {
-            'metrics': self.metrics,
-            'conf_matrices': self.conf_matrices,
+        # Save current epoch metrics
+        current_metrics = {
+            'metrics': {
+                phase: {
+                    metric_name: values[-1] if values else None  # 只取最后一个值
+                    for metric_name, values in phase_metrics.items()
+                }
+                for phase, phase_metrics in self.metrics.items()
+            },
+            'conf_matrices': {
+                phase: matrices[-1].tolist() if matrices else None  # 只取最后一个矩阵
+                for phase, matrices in self.conf_matrices.items()
+            },
             'epoch': epoch
         }
-        metrics_path = self.metrics_dir / f'metrics_epoch_{epoch}.pt'
-        torch.save(metrics_data, metrics_path)
+        metrics_path = self.metrics_dir / f'metrics_epoch_{epoch}.json'
+        with open(metrics_path, 'w') as f:
+            json.dump(current_metrics, f, indent=2)
+        
+        # Save history metrics
+        history_metrics = {
+            'metrics': {
+                phase: {
+                    metric_name: np.array(values).tolist()
+                    for metric_name, values in phase_metrics.items()
+                }
+                for phase, phase_metrics in self.metrics.items()
+            },
+            'conf_matrices': {
+                phase: [matrix.tolist() for matrix in matrices]
+                for phase, matrices in self.conf_matrices.items()
+            },
+            'epoch': epoch
+        }
+        history_path = self.metrics_dir / 'metrics_history.json'
+        with open(history_path, 'w') as f:
+            json.dump(history_metrics, f, indent=2)
         
         self.logger.info(f"Save checkpoint to {checkpoint_path}")
         self.logger.info(f"Save metrics to {metrics_path}")
 
     def load_checkpoint(self, checkpoint_path: Union[str, Path]):
-        """Load checkpoint"""
+        """Load checkpoint.
+        
+        Args:
+            checkpoint_path (Union[str, Path]): Path to the checkpoint file.
+            
+        Returns:
+            int: The epoch number of the loaded checkpoint.
+            
+        Raises:
+            FileNotFoundError: If checkpoint file doesn't exist.
+            RuntimeError: If checkpoint loading fails.
+        """
         checkpoint_path = Path(checkpoint_path)
         if not checkpoint_path.exists():
             raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_path}")
         
-        self.logger.info(f"Load checkpoint: {checkpoint_path}")
-        # Use weights_only=True for added security
-        checkpoint = torch.load(
-            checkpoint_path, 
-            map_location=self.device,
-            weights_only=True  # Add this parameter
-        )
-        
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        if 'optimizer_state_dict' in checkpoint:
-            self._get_optimizer().load_state_dict(checkpoint['optimizer_state_dict'])
-        if 'scheduler_state_dict' in checkpoint and self._get_scheduler():
-            self._get_scheduler().load_state_dict(checkpoint['scheduler_state_dict'])
+        try:
+            self.logger.info(f"Loading checkpoint: {checkpoint_path}")
+            checkpoint = torch.load(
+                checkpoint_path, 
+                map_location=self.device,
+                weights_only=True
+            )
             
-        return checkpoint['epoch']
+            # Validate checkpoint structure
+            required_keys = {'epoch', 'model_state_dict'}
+            if not all(key in checkpoint for key in required_keys):
+                raise RuntimeError("Checkpoint file is corrupted or invalid")
+            
+            self.model.load_state_dict(checkpoint['model_state_dict'])
+            if 'optimizer_state_dict' in checkpoint:
+                self._get_optimizer().load_state_dict(checkpoint['optimizer_state_dict'])
+            if 'scheduler_state_dict' in checkpoint and self._get_scheduler():
+                self._get_scheduler().load_state_dict(checkpoint['scheduler_state_dict'])
+            
+            return checkpoint['epoch']
+        except Exception as e:
+            self.logger.error(f"Failed to load checkpoint: {str(e)}")
+            raise
 
-    def load_metrics(self, epoch: int):
-        """Load metrics data for a specific epoch"""
-        metrics_path = self.metrics_dir / f'metrics_epoch_{epoch}.pt'
+    def load_metrics(self, epoch: Optional[int] = None, metrics_path: Optional[Path] = None):
+        """Load metrics data.
+        
+        Args:
+            epoch (Optional[int]): Epoch number. If provided, load metrics for specific epoch.
+                                     If None, load complete metrics history.
+            metrics_path (Optional[Path]): Optional path to metrics file. 
+                                         If not provided, will look in default location.
+        
+        Returns:
+            int: The epoch number of the loaded metrics.
+            
+        Raises:
+            FileNotFoundError: If metrics file not found.
+        """
+        if metrics_path is None:
+            if epoch is not None:
+                # Load specific epoch metrics
+                metrics_path = self.metrics_dir / f"metrics_epoch_{epoch}.json"
+            else:
+                # Load complete history
+                metrics_path = self.metrics_dir / "metrics_history.json"
+        else:
+            metrics_path = Path(metrics_path)
+        
         if not metrics_path.exists():
             raise FileNotFoundError(f"Metrics file not found: {metrics_path}")
-            
+        
         self.logger.info(f"Load metrics data: {metrics_path}")
-        metrics_data = torch.load(metrics_path)
-        self.metrics = metrics_data['metrics']
-        self.conf_matrices = metrics_data['conf_matrices']
+        with open(metrics_path, 'r') as f:
+            metrics_data = json.load(f)
+        
+        self.metrics = defaultdict(lambda: defaultdict(list))
+        
+        if epoch is not None:
+            # For single epoch metrics, convert single values to lists
+            for phase, phase_metrics in metrics_data['metrics'].items():
+                for metric_name, value in phase_metrics.items():
+                    self.metrics[phase][metric_name] = [value] if value is not None else []
+            
+            # Convert single confusion matrix to list
+            self.conf_matrices = {
+                phase: [np.array(matrix)] if matrix is not None else []
+                for phase, matrix in metrics_data['conf_matrices'].items()
+            }
+        else:
+            # For complete history, load as is
+            for phase, phase_metrics in metrics_data['metrics'].items():
+                for metric_name, values in phase_metrics.items():
+                    self.metrics[phase][metric_name] = values
+            
+            self.conf_matrices = {
+                phase: [np.array(matrix) for matrix in matrices]
+                for phase, matrices in metrics_data['conf_matrices'].items()
+            }
+        
         return metrics_data['epoch']
 
     def load_weights(self, weights_path: Union[str, Path]):
-        """Load model weights only"""
+        """Load model weights only.
+        
+        Args:
+            weights_path (Union[str, Path]): Path to the weights file.
+            
+        Raises:
+            FileNotFoundError: If weights file doesn't exist.
+        """
         weights_path = Path(weights_path)
         if not weights_path.exists():
             raise FileNotFoundError(f"Weights file not found: {weights_path}")
@@ -255,7 +435,14 @@ class ModelManager:
         self.model.load_state_dict(state_dict)
 
     def _update_metrics(self, phase, metrics, conf_matrix, epoch):
-        """Update and record metrics"""
+        """Update and record metrics.
+        
+        Args:
+            phase (str): The phase of training (train, val, test).
+            metrics (Dict[str, float]): The metrics to update.
+            conf_matrix (np.ndarray): The confusion matrix for the current phase.
+            epoch (int): The current epoch number.
+        """
         # Update metrics history
         for name, value in metrics.items():
             self.metrics[phase][name].append(value)
@@ -263,3 +450,28 @@ class ModelManager:
             
         # Save confusion matrix
         self.conf_matrices[phase].append(conf_matrix) 
+
+    def get_model_summary(self) -> Dict:
+        """Get model summary including parameters count and architecture.
+        
+        Returns:
+            Dict: A dictionary containing model information such as model name, type, total parameters, and trainable parameters.
+        """
+        total_params = sum(p.numel() for p in self.model.parameters())
+        trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        
+        return {
+            'model_name': self.model_name,
+            'model_type': self.config.model.name,
+            'total_parameters': total_params,
+            'trainable_parameters': trainable_params,
+            'device': str(self.device)
+        }
+
+    def cleanup(self):
+        """Cleanup resources like TensorBoard writer.
+        
+        This method closes the TensorBoard writer if it exists.
+        """
+        if hasattr(self, 'writer'):
+            self.writer.close() 

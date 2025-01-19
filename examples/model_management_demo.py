@@ -3,10 +3,11 @@ import torch.nn as nn
 from pathlib import Path
 from utils.model_management import ModelManager
 from config import Config, ModelConfig, DataConfig, TrainingConfig
+import numpy as np
 
 def basic_model_example():
     """
-    Basic model management example showing standard model training workflow
+    Basic model management example
     """
     # Create a basic configuration
     data_config = DataConfig(
@@ -56,13 +57,26 @@ def basic_model_example():
     )
     
     # Train model
-    manager.train(train_loader)
-    print(f"Training metrics: {manager.metrics['train']}")
-    print(f"Model directory: {manager.model_dir}")
+    manager.train(train_loader, val_loader=None)
+    
+    print("\nTraining metrics (last 5 epochs):")
+    for metric, values in manager.metrics['train'].items():
+        # Format last 5 values, handle numpy arrays
+        last_values = values[-5:]
+        formatted_values = [
+            float(v) if isinstance(v, (np.floating, np.integer)) else v 
+            for v in last_values
+        ]
+        print(f"{metric}: {formatted_values}...")
+    
+    print(f"\nModel directory: {manager.model_dir}")
+    
+    # Clean up
+    manager.cleanup()
 
 def custom_model_example():
     """
-    Example of using a custom model with model manager
+    Example with custom model
     """
     # Create custom model file
     custom_model_dir = Path("./custom_models")
@@ -148,16 +162,19 @@ class CustomNet(nn.Module):
         batch_size=config.training.batch_size
     )
     
-    manager.train(train_loader, val_loader)
+    # Train model
+    manager.train(train_loader, val_loader=val_loader)
     
-    # Print training results
-    print("\nTraining metrics:")
-    for metric, values in manager.metrics['train'].items():
-        print(f"{metric}: {values}")
+    print("\nTraining metrics (last epoch):")
+    for phase in ['train', 'val']:
+        print(f"\n{phase.capitalize()} phase:")
+        for metric, values in manager.metrics[phase].items():
+            # Format last value, handle numpy arrays
+            value = float(values[-1]) if isinstance(values[-1], (np.floating, np.integer)) else values[-1]
+            print(f"{metric}: {value:.4f}")
     
-    print("\nValidation metrics:")
-    for metric, values in manager.metrics['val'].items():
-        print(f"{metric}: {values}")
+    # Clean up
+    manager.cleanup()
 
 def checkpoint_management_example():
     """
@@ -199,24 +216,32 @@ def checkpoint_management_example():
         batch_size=config.training.batch_size
     )
     
-    manager1.train(train_loader)
+    # Train both models
+    manager1.train(train_loader, val_loader=None)
+    print("\nModel 1 training completed")
     
-    # Save checkpoint from manager1
+    # Save and load checkpoint
     manager1.save_checkpoint(epoch=0)
     checkpoint_path = manager1.checkpoint_dir / "checkpoint_epoch_0.pt"
-    print(f"Saved checkpoint to: {checkpoint_path}")
+    print(f"\nSaved checkpoint to: {checkpoint_path}")
     
-    # Load checkpoint to manager2
+    # Load checkpoint to second model
     manager2.load_checkpoint(checkpoint_path)
     print("Successfully loaded checkpoint to second model")
     
-    # Verify both models have same weights
-    for p1, p2 in zip(manager1.model.parameters(), manager2.model.parameters()):
+    # Verify models have same weights
+    print("\nVerifying model weights...")
+    for (n1, p1), (n2, p2) in zip(manager1.model.named_parameters(), 
+                                 manager2.model.named_parameters()):
         if not torch.allclose(p1, p2):
-            print("Warning: Model parameters don't match!")
+            print(f"Warning: Parameters {n1} don't match!")
             break
     else:
-        print("Verified: Both models have identical parameters")
+        print("Verified: Both models have identical weights")
+    
+    # Clean up
+    manager1.cleanup()
+    manager2.cleanup()
 
 if __name__ == "__main__":
     print("Basic model management example:")
