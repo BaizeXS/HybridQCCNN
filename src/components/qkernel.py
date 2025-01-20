@@ -1,3 +1,11 @@
+"""Quantum convolution kernel implementation.
+
+This module provides the quantum kernel class that implements:
+- Quantum circuit for convolution operations
+- Parameter management for quantum operations
+- Input encoding and measurement
+"""
+
 from typing import Callable, Union, Dict, Tuple, Optional, List
 
 import numpy as np
@@ -10,16 +18,24 @@ QuantumCircuit = Callable[[ArrayLike, ArrayLike], List[float]]
 
 
 class QKernel:
-    """Quantum Convolution Kernel
+    """Quantum convolution kernel for quantum-classical hybrid neural networks.
     
-    A quantum circuit that acts as a convolution kernel in quantum-classical hybrid neural networks.
+    This class implements a quantum circuit that acts as a convolution kernel:
+    - Encodes classical data into quantum states
+    - Applies parameterized quantum operations
+    - Measures quantum states to produce classical output
     
-    Args:
-        quantum_channels (int): Number of input quantum channels
-        kernel_size (Union[int, Tuple[int, int]]): Size of the convolution kernel
-        num_param_blocks (int): Number of parameterized quantum blocks
-        kernel_circuit (Optional[QuantumCircuit]): Custom quantum circuit function
-        weight_shapes (Optional[Dict]): Custom weight shapes for the quantum circuit
+    The kernel structure consists of:
+    1. Encoding Layer: H + RY(input) gates
+    2. Parametric Layer: CRZ + RY(param) gates
+    3. Measurement Layer: PauliZ measurements
+    
+    Attributes:
+        kernel_size (Tuple[int, int]): Size of the convolution kernel.
+        num_qubits (int): Number of qubits in the quantum circuit.
+        num_param_blocks (int): Number of parameterized quantum blocks.
+        circuit (QuantumCircuit): Quantum circuit function.
+        weight_shapes (Dict): Shapes of trainable weights.
     """
 
     def __init__(
@@ -30,6 +46,18 @@ class QKernel:
             kernel_circuit: Optional[QuantumCircuit] = None,
             weight_shapes: Optional[Dict[str, Tuple[int, ...]]] = None,
     ):
+        """Initialize quantum kernel.
+        
+        Args:
+            quantum_channels (int): Number of input quantum channels.
+            kernel_size (Union[int, Tuple[int, int]]): Size of convolution kernel.
+            num_param_blocks (int): Number of parameterized quantum blocks.
+            kernel_circuit (Optional[QuantumCircuit]): Custom quantum circuit function.
+            weight_shapes (Optional[Dict]): Custom weight shapes for quantum circuit.
+            
+        Raises:
+            ValueError: If parameters are invalid.
+        """
         # Validate parameters
         self._validate_params(quantum_channels, kernel_size, num_param_blocks, kernel_circuit, weight_shapes)
 
