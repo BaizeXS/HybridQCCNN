@@ -23,11 +23,12 @@ class DataConfig:
     - Input shape and class information
     
     Attributes:
-        name (str): Name of the dataset
+        name (str): Name of the dataset, must be the same as the dataset class name
         input_shape (tuple): Input shape of the data
         num_classes (int): Number of classes in the dataset
         dataset_type (str): Type of the dataset ('CIFAR10', 'MNIST', 'custom' etc.)
-        dataset_path (Optional[Path]): Path to custom dataset
+        dataset_path (Optional[Path]): Path to dataset files
+        custom_dataset_path (Optional[Path]): Path to custom dataset class implementation
         train_transforms (List[Dict]): Training data transformations
         val_transforms (List[Dict]): Validation data transformations
         test_transforms (List[Dict]): Test data transformations
@@ -42,6 +43,7 @@ class DataConfig:
     num_classes: int
     dataset_type: str
     dataset_path: Optional[Path] = None
+    custom_dataset_path: Optional[Path] = None
     train_transforms: List[Dict[str, Any]] = field(default_factory=lambda: [
         {'name': 'ToTensor'},
         {'name': 'Normalize', 'args': {'mean': [0.5], 'std': [0.5]}}
@@ -59,6 +61,32 @@ class DataConfig:
     num_workers: int = 4
     pin_memory: bool = True
     dataset_kwargs: Optional[Dict[str, Any]] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Validate configuration after initialization."""
+        # Validate dataset_type
+        valid_types = {'MNIST', 'CIFAR10', 'CUSTOM'}
+        if self.dataset_type not in valid_types:
+            raise ValueError(f"Invalid dataset_type: {self.dataset_type}. Must be one of {valid_types}")
+        
+        # Validate CUSTOM dataset_type
+        if self.dataset_type == 'CUSTOM' and not self.custom_dataset_path:
+            raise ValueError("custom_dataset_path must be provided for CUSTOM dataset_type")
+        
+        # Validate numeric parameters
+        if self.batch_size <= 0:
+            raise ValueError(f"batch_size must be positive, got {self.batch_size}")
+        
+        if not 0 < self.train_split < 1:
+            raise ValueError(f"train_split must be between 0 and 1, got {self.train_split}")
+        
+        # Validate input_shape
+        if not isinstance(self.input_shape, (tuple, list)) or len(self.input_shape) != 3:
+            raise ValueError(f"input_shape must be a 3-tuple (channels, height, width), got {self.input_shape}")
+        
+        # Validate num_classes
+        if self.num_classes <= 1:
+            raise ValueError(f"num_classes must be greater than 1, got {self.num_classes}")
 
 @dataclass
 class QuantumConfig:

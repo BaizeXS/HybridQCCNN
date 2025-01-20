@@ -23,6 +23,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import datasets, transforms
 import logging
+import importlib
+import sys
 
 from config import DataConfig
 
@@ -219,6 +221,9 @@ class DatasetManager:
             
         Returns:
             Dataset: Loaded dataset
+            
+        Raises:
+            ValueError: If dataset type is unknown or custom dataset configuration is invalid
         """
         if self.config.dataset_type.upper() == 'CIFAR10':
             return datasets.CIFAR10(
@@ -235,16 +240,29 @@ class DatasetManager:
                 transform=transform
             )
         elif self.config.dataset_type.upper() == 'CUSTOM':
-            # Check if custom dataset class is provided
-            if not hasattr(self.config, 'custom_dataset_class'):
-                raise ValueError("Custom dataset class must be provided when using custom dataset")
+            # Load custom dataset class
+            if not self.config.custom_dataset_path:
+                raise ValueError("custom_dataset_path must be provided for custom dataset")
             
-            custom_dataset = self.config.custom_dataset_class(
+            # Import custom dataset module
+            custom_dataset_path = Path(self.config.custom_dataset_path)
+            spec = importlib.util.spec_from_file_location(
+                custom_dataset_path.stem, custom_dataset_path
+            )
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[custom_dataset_path.stem] = module
+            spec.loader.exec_module(module)
+            
+            # Get dataset class
+            dataset_class = getattr(module, self.config.name)
+            
+            # Create dataset instance with additional kwargs
+            return dataset_class(
                 data_dir=self.data_dir,
                 transform=transform,
-                train=train
+                train=train,
+                **self.config.dataset_kwargs
             )
-            return custom_dataset
         else:
             raise ValueError(f"Unknown dataset type: {self.config.dataset_type}")
 
@@ -291,4 +309,4 @@ class DatasetManager:
             shuffle=shuffle,
             num_workers=self.config.num_workers,
             pin_memory=self.config.pin_memory
-        ) 
+        )

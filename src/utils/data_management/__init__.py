@@ -1,10 +1,14 @@
-"""Data management utilities for dataset handling and preprocessing.
+"""Data management tools for deep learning datasets.
 
 This module provides tools for:
-1. Dataset loading - Built-in and custom dataset support
-2. Data preprocessing - Transformation pipelines and data augmentation
-3. Data splitting - Training/validation/test set management
-4. DataLoader configuration - Batch processing and memory optimization
+1. Dataset loading and preprocessing
+2. Custom dataset implementation
+3. Data transformation pipeline
+4. Training/validation/test data splitting
+
+Main components:
+- CustomDataset: Base class for custom dataset implementations
+- DatasetManager: Central manager for dataset operations
 """
 
 from .dataset_manager import DatasetManager, CustomDataset
