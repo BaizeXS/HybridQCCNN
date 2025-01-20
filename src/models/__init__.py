@@ -1,32 +1,32 @@
-"""
-Models module containing all available neural network architectures.
-Including classical and hybrid quantum-classical models.
+"""Models module containing all available neural network architectures.
+
+This module provides:
+1. Benchmark Models - Simple models for testing and comparison
+2. VGG Models - VGG-style architectures
+3. GoogLeNet Models - GoogLeNet/Inception-style architectures
+4. ResNet Models - ResNet-style architectures
 """
 
 from typing import Dict, Type, Union
-
 import torch.nn as nn
 
-# Benchmark Models - Simple models for testing and comparison
+# Benchmark Models
 from .benchmark import ClassicNet, HybridNet
 
-# VGG Models - VGG-style architectures
+# VGG Models
 from .vgg import SimpleVGG, HybridVGG
 
-# GoogLeNet Models - GoogLeNet/Inception-style architectures
+# GoogLeNet Models
 from .googlenet import (
     SimpleGoogLeNet, HybridGoogLeNet,
-    # GoogLeNet components
     BasicConv2d, SimpleInception, SimpleInceptionAux,
     HybridInception, HybridConv2d
 )
 
-# ResNet Models - ResNet-style architectures
+# ResNet Models
 from .resnet import (
     SimpleResNet, HybridResNet,
-    # ResNet components
     BasicBlock, HybridBlock,
-    # Pre-configured models
     simple_resnet18, simple_resnet34,
     hybrid_resnet18, hybrid_resnet34
 )
@@ -44,15 +44,12 @@ ALL_MODELS: Dict[str, ModelFactory] = {
     # Benchmark Models
     "ClassicNet": ClassicNet,
     "HybridNet": HybridNet,
-
     # VGG Models
     "SimpleVGG": SimpleVGG,
     "HybridVGG": HybridVGG,
-
     # GoogLeNet Models
     "SimpleGoogLeNet": SimpleGoogLeNet,
     "HybridGoogLeNet": HybridGoogLeNet,
-
     # ResNet Models
     "SimpleResNet": SimpleResNet,
     "HybridResNet": HybridResNet,
@@ -64,32 +61,18 @@ ALL_MODELS: Dict[str, ModelFactory] = {
 
 __all__ = [
     # Benchmark Models
-    'ClassicNet',
-    'HybridNet',
-    
+    'ClassicNet', 'HybridNet',
     # VGG Models
-    'SimpleVGG',
-    'HybridVGG',
-    
+    'SimpleVGG', 'HybridVGG',
     # GoogLeNet Models and Components
-    'SimpleGoogLeNet',
-    'HybridGoogLeNet',
-    'BasicConv2d',
-    'SimpleInception',
-    'SimpleInceptionAux',
-    'HybridInception',
-    'HybridConv2d',
-    
+    'SimpleGoogLeNet', 'HybridGoogLeNet',
+    'BasicConv2d', 'SimpleInception', 'SimpleInceptionAux',
+    'HybridInception', 'HybridConv2d',
     # ResNet Models and Components
-    'SimpleResNet',
-    'HybridResNet',
-    'BasicBlock',
-    'HybridBlock',
-    'simple_resnet18',
-    'simple_resnet34',
-    'hybrid_resnet18',
-    'hybrid_resnet34',
-    
+    'SimpleResNet', 'HybridResNet',
+    'BasicBlock', 'HybridBlock',
+    'simple_resnet18', 'simple_resnet34',
+    'hybrid_resnet18', 'hybrid_resnet34',
     # Model Registry
     'ALL_MODELS'
 ]
