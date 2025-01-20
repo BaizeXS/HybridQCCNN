@@ -1,11 +1,12 @@
 import pytest
 import torch
 import torch.nn as nn
+import numpy as np
 from pathlib import Path
+import logging
 from utils.model_management import ModelManager
 from config import Config, ModelConfig, DataConfig, TrainingConfig
 import json
-import numpy as np
 import shutil
 
 # Test parameters
@@ -45,11 +46,12 @@ def test_config(test_model_path):
     return Config(
         name="test_model",
         version="v1",
-        description="Test configuration",
+        description="Test model",
         data=DataConfig(
-            name="test_data",
-            input_shape=TEST_PARAMS['input_shape'],
+            name="test_dataset",
+            input_shape=(1, 28, 28),
             num_classes=TEST_PARAMS['num_classes'],
+            dataset_type="MNIST",
             train_transforms=[],
             val_transforms=[],
             test_transforms=[]
@@ -65,7 +67,8 @@ def test_config(test_model_path):
             checkpoint_interval=1
         ),
         device="cuda" if torch.cuda.is_available() else "cpu",
-        output_dir=Path("./test_outputs")
+        output_dir=Path("./test_outputs"),
+        seed=42
     )
 
 @pytest.fixture
@@ -218,6 +221,24 @@ def test_metrics_file_format(model_manager, test_loader):
         assert isinstance(matrix, list) or matrix is None
         if matrix is not None:
             assert all(isinstance(row, list) for row in matrix)
+
+def test_num_classes_mismatch(test_config, caplog):
+    """Test handling of mismatched num_classes between model and dataset."""
+    # Modify model_kwargs to cause a mismatch
+    test_config.model.model_kwargs['num_classes'] = TEST_PARAMS['num_classes'] + 1
+    
+    with caplog.at_level(logging.WARNING):
+        manager = ModelManager(test_config, "test_model")
+    
+    # Verify warning message
+    assert any(
+        "Model num_classes" in record.message 
+        and "does not match dataset" in record.message
+        for record in caplog.records
+    )
+    
+    # Verify model uses dataset's num_classes
+    assert manager.model.fc.out_features == TEST_PARAMS['num_classes']
 
 @pytest.fixture(autouse=True)
 def cleanup_test_dirs():

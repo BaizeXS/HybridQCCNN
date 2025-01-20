@@ -12,6 +12,7 @@ from typing import Union, Optional, Dict
 from models import ALL_MODELS
 import json
 from config import Config
+from torch.utils.data import DataLoader
 
 class ModelManager:
     """Model manager: responsible for managing a single model, including building, training, testing, etc.
@@ -141,7 +142,20 @@ class ModelManager:
         if model_class is None:
             raise ValueError(f"Unknown model type: {self.config.model.name}")
             
-        return model_class(**self.config.model.model_kwargs)
+        # Create a copy of model_kwargs to avoid modifying the original configuration
+        model_kwargs = self.config.model.model_kwargs.copy()
+        
+        # Handle num_classes
+        if 'num_classes' in model_kwargs:
+            if model_kwargs['num_classes'] != self.config.data.num_classes:
+                self.logger.warning(
+                    f"Model num_classes ({model_kwargs['num_classes']}) "
+                    f"does not match dataset ({self.config.data.num_classes}). "
+                    f"Using dataset value."
+                )
+        model_kwargs['num_classes'] = self.config.data.num_classes
+        
+        return model_class(**model_kwargs)
 
     def _get_criterion(self):
         """Get loss function.
@@ -177,9 +191,9 @@ class ModelManager:
         )
 
     def train(
-        self, 
-        train_loader: torch.utils.data.DataLoader,
-        val_loader: Optional[torch.utils.data.DataLoader] = None,
+        self,
+        train_loader: DataLoader,
+        val_loader: Optional[DataLoader] = None,
         **kwargs
     ) -> None:
         """Train the model.
@@ -221,8 +235,8 @@ class ModelManager:
             if (epoch + 1) % self.config.training.checkpoint_interval == 0:
                 self.save_checkpoint(epoch)
 
-    def test(self, test_loader):
-        """Test model.
+    def test(self, test_loader: DataLoader) -> Dict[str, float]:
+        """Test the model.
         
         Args:
             test_loader (DataLoader): DataLoader for test data.
