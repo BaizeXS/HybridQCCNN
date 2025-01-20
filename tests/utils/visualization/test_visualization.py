@@ -1,9 +1,3 @@
-"""
-import matplotlib
-matplotlib.use('Agg')  # 设置非交互式后端
-import matplotlib.pyplot as plt
-"""
-
 import pytest
 import numpy as np
 import torch
