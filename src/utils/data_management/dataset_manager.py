@@ -239,6 +239,20 @@ class DatasetManager:
                 download=True,
                 transform=transform
             )
+        elif self.config.dataset_type.upper() == 'FASHIONMNIST':
+            return datasets.FashionMNIST(
+                root=self.data_dir,
+                train=train,
+                download=True,
+                transform=transform
+            )
+        elif self.config.dataset_type.upper() == 'CIFAR100':
+            return datasets.CIFAR100(
+                root=self.data_dir,
+                train=train,
+                download=True,
+                transform=transform
+            )
         elif self.config.dataset_type.upper() == 'CUSTOM':
             # Load custom dataset class
             if not self.config.custom_dataset_path:
