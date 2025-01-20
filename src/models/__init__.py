@@ -1,10 +1,15 @@
-"""Models module containing all available neural network architectures.
+"""Neural network model architectures for quantum-classical hybrid systems.
 
-This module provides:
+This package provides various neural network architectures including:
 1. Benchmark Models - Simple models for testing and comparison
 2. VGG Models - VGG-style architectures
 3. GoogLeNet Models - GoogLeNet/Inception-style architectures
 4. ResNet Models - ResNet-style architectures
+
+Example:
+    >>> from models import SimpleVGG, HybridResNet
+    >>> model = SimpleVGG(num_classes=10)
+    >>> hybrid_model = HybridResNet(num_classes=10)
 """
 
 from typing import Dict, Type, Union
@@ -76,3 +81,11 @@ __all__ = [
     # Model Registry
     'ALL_MODELS'
 ]
+
+# Version of the models package
+__version__ = '0.1.0'
+
+# Package metadata
+__author__ = 'BaizeXS'
+__email__ = 'baizexs@gmail.com'
+__description__ = 'Neural network architectures for quantum-classical hybrid systems'
