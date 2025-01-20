@@ -41,15 +41,46 @@ class ModelManager:
             config (Config): Configuration object containing model and training parameters.
             model_name (str): Name of the model instance, used to distinguish different instances of the same model.
         """
+        # Initialize configuration
         self.config = config
         self.model_name = model_name
+        
+        # Set device
         self.device = torch.device(config.device)
         
-        # Set up model directory structure
-        self.model_dir = config.base_dir / model_name
+        # Initialize directories first
+        self._init_directories()
+        
+        # Initialize logger
+        self.logger = logging.getLogger(f"{self.model_name}_manager")
+        self._setup_logging()
+        
+        # Set random seed
+        if hasattr(self.config, 'seed'):
+            self.logger.info(f"Set random seed to {config.seed}")
+            torch.manual_seed(config.seed)
+            torch.cuda.manual_seed_all(config.seed)
+            np.random.seed(config.seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+        
+        # Initialize model
+        self.model = self._build_model()
+        self.model.to(self.device)
+        
+        # Initialize metrics tracking
+        self.metrics = defaultdict(lambda: defaultdict(list))
+        self.conf_matrices = defaultdict(list)
+        
+        # Initialize TensorBoard
+        self.writer = SummaryWriter(self.tensorboard_dir)
+
+    def _init_directories(self):
+        """Set up model directory structure."""
+        self.model_dir = self.config.base_dir / self.model_name
         self.checkpoint_dir = self.model_dir / "checkpoints"  # Store checkpoints
         self.weights_dir = self.model_dir / "weights"         # Store model weights
-        self.tensorboard_dir = config.tensorboard_dir / model_name  # TensorBoard logs
+        self.tensorboard_dir = self.config.tensorboard_dir / self.model_name  # TensorBoard logs
         self.log_dir = self.model_dir / "logs"               # Log files
         self.metrics_dir = self.model_dir / "metrics"  # Store metrics and confusion matrix data
         
@@ -58,31 +89,7 @@ class ModelManager:
                         self.weights_dir, self.tensorboard_dir, 
                         self.log_dir, self.metrics_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
-        
-        # Set up logging
-        self.logger = logging.getLogger(f"{self.model_name}_manager")
-        self._setup_logging()
-        
-        # Build model
-        self.model = self._build_model()
-        self.model.to(self.device)
-        
-        # Add TensorBoard support
-        self.writer = SummaryWriter(self.tensorboard_dir)
-        
-        # Add metrics recording
-        self.metrics = {
-            'train': defaultdict(list),
-            'val': defaultdict(list),
-            'test': defaultdict(list)
-        }
-        
-        self.conf_matrices = {
-            'train': [],
-            'val': [],
-            'test': []
-        }
-        
+
     def _setup_logging(self):
         """Set up logging.
         
@@ -102,6 +109,7 @@ class ModelManager:
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
+        
 
     def _build_model(self):
         """Build model.
@@ -174,7 +182,7 @@ class ModelManager:
         val_loader: Optional[torch.utils.data.DataLoader] = None,
         **kwargs
     ) -> None:
-        """Train model.
+        """Train the model.
         
         Args:
             train_loader (DataLoader): DataLoader for training data.

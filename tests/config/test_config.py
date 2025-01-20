@@ -19,12 +19,11 @@ TEST_PARAMS = {
 def sample_data_config():
     """Return a standard test data configuration"""
     return DataConfig(
-        name="MNIST",
-        input_shape=(1, 28, 28),
+        name="test_dataset",
+        input_shape=(3, 32, 32),
         num_classes=10,
-        train_transforms=[],
-        val_transforms=[],
-        test_transforms=[]
+        dataset_type="CIFAR10",
+        batch_size=64
     )
 
 @pytest.fixture
@@ -157,9 +156,10 @@ def test_hybrid_model_config():
 def test_data_config_transforms(transform_list):
     """Test data configuration with different transforms"""
     data_config = DataConfig(
-        name="CIFAR10",
+        name="test_dataset",
         input_shape=(3, 32, 32),
         num_classes=10,
+        dataset_type="CIFAR10",
         train_transforms=transform_list,
         val_transforms=transform_list,
         test_transforms=transform_list
@@ -216,15 +216,14 @@ def test_path_resolution():
     """Test path resolution for different scenarios"""
     config = Config(
         name="test",
-        version="v1",
-        description="test",
+        version="1.0",
+        description="Test config",
         data=DataConfig(
-            name="test",
-            input_shape=(1,),
-            num_classes=2,
-            train_transforms=[],
-            val_transforms=[],
-            test_transforms=[]
+            name="test_dataset",
+            input_shape=(3, 32, 32),
+            num_classes=10,
+            dataset_type="CIFAR10",
+            dataset_path="datasets/custom"
         ),
         model=ModelConfig(
             name="test",
@@ -237,3 +236,43 @@ def test_path_resolution():
     
     assert config.base_dir == Path("./test_output")
     assert config.tensorboard_dir == Path("./test_output/tensorboard") 
+
+def test_config_validation(config_manager):
+    """Test configuration validation"""
+    # Test missing required fields
+    invalid_config = {
+        'name': 'test',
+        'version': 'v1',
+        'description': 'Test config',
+        'data': {
+            'name': 'test_dataset',
+            'input_shape': (3, 32, 32),
+            # Missing num_classes, dataset_type, batch_size
+        },
+        'model': {
+            'name': 'test_model',
+            'model_type': 'classic'
+        },
+        'training': {
+            'learning_rate': 0.001,
+            'weight_decay': 1e-4,
+            'num_epochs': 10,
+            'checkpoint_interval': 1
+        }
+    }
+    
+    with pytest.raises(ValueError, match="missing required fields"):
+        config_manager._validate_config_dict(invalid_config)
+
+def test_training_config():
+    """Test training configuration"""
+    training_config = TrainingConfig(
+        learning_rate=0.001,
+        weight_decay=1e-4,
+        num_epochs=10,
+        checkpoint_interval=1
+    )
+    
+    assert training_config.learning_rate == 0.001
+    assert training_config.num_epochs == 10
+    assert training_config.checkpoint_interval == 1

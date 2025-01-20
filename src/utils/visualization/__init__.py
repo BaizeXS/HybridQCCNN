@@ -1,9 +1,9 @@
-"""Visualization tools
+"""Visualization utilities for metrics, quantum states, and model analysis.
 
-This package provides various visualization tools, including:
-- MetricsPlotter: Plot training metrics and evaluation results
-- QuantumPlotter: Plot quantum states and quantum circuit diagrams
-- ModelPlotter: Plot model-related charts (e.g., activation functions)
+This module provides plotting tools for:
+1. Metrics visualization - Training metrics and confusion matrices
+2. Quantum visualization - Quantum states and circuits
+3. Model visualization - Activation functions and model architectures
 """
 
 from .metrics_plot import MetricsPlotter

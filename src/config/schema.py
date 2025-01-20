@@ -1,38 +1,79 @@
-"""Definition of the configuration data structure."""
+"""Configuration schema definitions.
+
+This module defines the data structures for:
+1. Data configuration - Dataset and data processing settings
+2. Model configuration - Model architecture and parameters
+3. Training configuration - Training process parameters
+4. Quantum configuration - Quantum component settings
+
+The configuration classes use dataclasses for clean and type-safe configuration management.
+"""
+
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, List, Union, Tuple
 from pathlib import Path
 
 @dataclass
 class DataConfig:
-    """Data configuration.
+    """Data configuration for dataset management.
+    
+    This class defines settings for:
+    - Dataset selection and parameters
+    - Data transformations for different phases
+    - Input shape and class information
     
     Attributes:
-        name: Name of the dataset
-        input_shape: Input shape of the data
-        num_classes: Number of classes in the dataset
-        train_transforms: List of transforms for training dataset
-        val_transforms: List of transforms for validation dataset
-        test_transforms: List of transforms for test dataset
-        dataset_kwargs: Additional arguments for dataset initialization
+        name (str): Name of the dataset
+        input_shape (tuple): Input shape of the data
+        num_classes (int): Number of classes in the dataset
+        dataset_type (str): Type of the dataset ('CIFAR10', 'MNIST', 'custom' etc.)
+        dataset_path (Optional[Path]): Path to custom dataset
+        train_transforms (List[Dict]): Training data transformations
+        val_transforms (List[Dict]): Validation data transformations
+        test_transforms (List[Dict]): Test data transformations
+        train_split (float): Train/val split ratio
+        batch_size (int): Size of training batches
+        num_workers (int): Number of workers for data loading
+        pin_memory (bool): Whether to pin memory for data loading
+        dataset_kwargs (Dict): Additional dataset parameters
     """
     name: str
     input_shape: tuple
     num_classes: int
-    train_transforms: List[Dict[str, Any]]
-    val_transforms: List[Dict[str, Any]]
-    test_transforms: List[Dict[str, Any]]
+    dataset_type: str
+    dataset_path: Optional[Path] = None
+    train_transforms: List[Dict[str, Any]] = field(default_factory=lambda: [
+        {'name': 'ToTensor'},
+        {'name': 'Normalize', 'args': {'mean': [0.5], 'std': [0.5]}}
+    ])
+    val_transforms: List[Dict[str, Any]] = field(default_factory=lambda: [
+        {'name': 'ToTensor'},
+        {'name': 'Normalize', 'args': {'mean': [0.5], 'std': [0.5]}}
+    ])
+    test_transforms: List[Dict[str, Any]] = field(default_factory=lambda: [
+        {'name': 'ToTensor'},
+        {'name': 'Normalize', 'args': {'mean': [0.5], 'std': [0.5]}}
+    ])
+    train_split: float = 0.8
+    batch_size: int = 64
+    num_workers: int = 4
+    pin_memory: bool = True
     dataset_kwargs: Optional[Dict[str, Any]] = field(default_factory=dict)
 
 @dataclass
 class QuantumConfig:
-    """Quantum configuration.
+    """Quantum component configuration.
+    
+    This class defines settings for:
+    - Quantum circuit parameters
+    - Quantum device configuration
+    - Differentiation methods
     
     Attributes:
-        q_layers: Number of quantum parameter layers
-        diff_method: Method for calculating quantum gradients
-        q_device: Quantum device simulator name
-        q_device_kwargs: Additional arguments for quantum device initialization
+        q_layers (int): Number of quantum parameter layers
+        diff_method (str): Method for calculating quantum gradients
+        q_device (str): Quantum device simulator name
+        q_device_kwargs (Dict): Additional quantum device parameters
     """
     q_layers: int = 2
     diff_method: str = "best"
@@ -41,14 +82,19 @@ class QuantumConfig:
 
 @dataclass
 class ModelConfig:
-    """Model configuration
+    """Model architecture configuration.
+    
+    This class defines settings for:
+    - Model type and architecture
+    - Model-specific parameters
+    - Quantum components (if applicable)
     
     Attributes:
-        name: Model name
-        model_type: Model type ("classic", "quantum", "custom")
-        model_kwargs: Model parameters
-        quantum_config: Quantum configuration (for quantum models)
-        custom_model_path: Path to custom model code file (for custom models)
+        name (str): Model name
+        model_type (str): Model type ("classic", "quantum", "custom")
+        model_kwargs (Dict): Model parameters
+        quantum_config (QuantumConfig): Quantum configuration
+        custom_model_path (Path): Path to custom model code
     """
     name: str
     model_type: str = "classic"
@@ -57,6 +103,7 @@ class ModelConfig:
     custom_model_path: Optional[Union[str, Path]] = None
     
     def __post_init__(self):
+        """Validate and process initialization parameters."""
         if self.model_type == "custom" and not self.custom_model_path:
             raise ValueError("custom_model_path must be provided for custom models")
         if self.custom_model_path:
@@ -64,18 +111,21 @@ class ModelConfig:
 
 @dataclass
 class TrainingConfig:
-    """Training configuration.
+    """Training process configuration.
+    
+    This class defines settings for:
+    - Training hyperparameters
+    - Optimization settings
+    - Checkpointing and logging
     
     Attributes:
-        batch_size: Size of training batches
-        learning_rate: Initial learning rate
-        weight_decay: L2 regularization factor
-        num_epochs: Number of training epochs
-        checkpoint_interval: Epochs between checkpoints
-        scheduler_type: Type of learning rate scheduler
-        scheduler_kwargs: Parameters for the learning rate scheduler
+        learning_rate (float): Initial learning rate
+        weight_decay (float): L2 regularization factor
+        num_epochs (int): Number of training epochs
+        checkpoint_interval (int): Epochs between checkpoints
+        scheduler_type (str): Type of learning rate scheduler
+        scheduler_kwargs (Dict): Scheduler parameters
     """
-    batch_size: int = 64
     learning_rate: float = 1e-3
     weight_decay: float = 1e-4
     num_epochs: int = 10
@@ -87,18 +137,25 @@ class TrainingConfig:
 
 @dataclass
 class Config:
-    """Main configuration class for model training.
+    """Main configuration class.
+    
+    This class combines all configuration components:
+    - Basic information
+    - Data configuration
+    - Model configuration
+    - Training configuration
+    - System settings
     
     Attributes:
-        name: Model configuration name
-        version: Configuration version
-        description: Detailed description of this configuration
-        data: Data-related configuration
-        model: Model-related configuration
-        training: Training-related configuration
-        device: Computing device ("cpu" or "cuda")
-        seed: Random seed for reproducibility
-        output_dir: Base directory for outputs
+        name (str): Configuration name
+        version (str): Configuration version
+        description (str): Configuration description
+        data (DataConfig): Data configuration
+        model (ModelConfig): Model configuration
+        training (TrainingConfig): Training configuration
+        device (str): Computing device
+        seed (int): Random seed
+        output_dir (Path): Output directory
     """
     name: str
     version: str
@@ -109,21 +166,26 @@ class Config:
     device: str = "cpu"
     seed: int = 42
     output_dir: Path = Path("./outputs")
-    
+
+    def __post_init__(self):
+        """Post-initialization processing"""
+        if isinstance(self.output_dir, str):
+            self.output_dir = Path(self.output_dir)
+        
     @property
     def base_dir(self) -> Path:
-        """Return the base directory for outputs"""
+        """Get base directory for outputs."""
         return self.output_dir
     
     @property
     def tensorboard_dir(self) -> Path:
-        """Return the base directory for tensorboard"""
+        """Get tensorboard directory."""
         return self.base_dir / "tensorboard"
 
     def to_dict(self) -> dict:
         """Convert configuration to dictionary format."""
-        # Helper function to clean data types
         def clean_data(obj):
+            """Clean data for serialization."""
             if isinstance(obj, (tuple, set)):
                 return list(obj)
             elif isinstance(obj, Path):
@@ -138,23 +200,9 @@ class Config:
             'name': self.name,
             'version': self.version,
             'description': self.description,
-            'data': {
-                'name': self.data.name,
-                'input_shape': list(self.data.input_shape),
-                'num_classes': self.data.num_classes,
-                'train_transforms': self.data.train_transforms,
-                'val_transforms': self.data.val_transforms,
-                'test_transforms': self.data.test_transforms,
-                'dataset_kwargs': clean_data(self.data.dataset_kwargs)  # Clean dataset_kwargs
-            },
-            'model': {
-                'name': self.model.name,
-                'model_type': self.model.model_type,
-                'model_kwargs': clean_data(self.model.model_kwargs),  # Clean model_kwargs too
-                'quantum_config': self.model.quantum_config.__dict__ if self.model.quantum_config else None,
-                'custom_model_path': self.model.custom_model_path
-            },
-            'training': clean_data(self.training.__dict__),  # Clean training config
+            'data': clean_data(self.data.__dict__),
+            'model': clean_data(self.model.__dict__),
+            'training': clean_data(self.training.__dict__),
             'device': self.device,
             'seed': self.seed,
             'output_dir': str(self.output_dir)
@@ -162,9 +210,9 @@ class Config:
     
     @classmethod
     def from_dict(cls, config_dict: dict) -> 'Config':
-        """Create a configuration instance from a dictionary."""
+        """Create configuration from dictionary."""
         data_dict = config_dict['data'].copy()
-        data_dict['input_shape'] = tuple(data_dict['input_shape'])  # Convert list back to tuple
+        data_dict['input_shape'] = tuple(data_dict['input_shape'])
         data_config = DataConfig(**data_dict)
         
         quantum_config = None

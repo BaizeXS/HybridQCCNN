@@ -1,0 +1,52 @@
+name: "classic_resnet_cifar10"
+version: "1.0.0"
+description: "Classical ResNet model for CIFAR10 dataset"
+
+data:
+  name: "CIFAR10"
+  input_shape: [3, 32, 32]
+  num_classes: 10
+  train_transforms:
+    - name: "RandomCrop"
+      size: [32, 32]
+      padding: 4
+    - name: "RandomHorizontalFlip"
+    - name: "ToTensor"
+    - name: "Normalize"
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2023, 0.1994, 0.2010]
+  val_transforms:
+    - name: "ToTensor"
+    - name: "Normalize"
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2023, 0.1994, 0.2010]
+  test_transforms:
+    - name: "ToTensor"
+    - name: "Normalize"
+      mean: [0.4914, 0.4822, 0.4465]
+      std: [0.2023, 0.1994, 0.2010]
+  dataset_kwargs:
+    root: "datasets"
+    download: true
+
+model:
+  name: "simple_resnet18"
+  model_type: "classic"
+  model_kwargs: null
+  quantum_config: null
+  custom_model_path: null
+
+training:
+  batch_size: 64
+  learning_rate: 1e-3
+  weight_decay: 5e-4
+  num_epochs: 10
+  checkpoint_interval: 1
+  scheduler_type: "StepLR"
+  scheduler_kwargs:
+    step_size: 5
+    gamma: 0.5
+
+device: "cpu"
+seed: 42
+output_dir: "./outputs"
