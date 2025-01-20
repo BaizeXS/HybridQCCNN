@@ -1,0 +1,64 @@
+name: "model_name"
+version: "1.0.0"
+description: "Configuration template"
+
+data:
+  name: "dataset_name"
+  dataset_type: "CUSTOM"
+  input_shape: [3, 224, 224]
+  num_classes: 10
+  dataset_path: "datasets"
+  custom_dataset_path: null # Path to the custom dataset class file
+  train_split: 0.8
+  batch_size: 64
+  num_workers: 4
+  pin_memory: true
+  train_transforms:
+    - name: "Resize"
+      args:
+        size: [224, 224]
+    - name: "ToTensor"
+    - name: "Normalize"
+      args:
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+  val_transforms:
+    - name: "Resize"
+      args:
+        size: [224, 224]
+    - name: "ToTensor"
+    - name: "Normalize"
+      args:
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+  test_transforms:
+    - name: "Resize"
+      args:
+        size: [224, 224]
+    - name: "ToTensor"
+    - name: "Normalize"
+      args:
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+  dataset_kwargs: {}
+
+model:
+  name: "model_architecture"
+  model_type: "classic"
+  model_kwargs: null
+  quantum_config: null
+  custom_model_path: null
+
+training:
+  learning_rate: 1e-3
+  weight_decay: 1e-4
+  num_epochs: 10
+  checkpoint_interval: 1
+  scheduler_type: "StepLR"
+  scheduler_kwargs:
+    step_size: 5
+    gamma: 0.5
+
+device: "cpu"
+seed: 42
+output_dir: "./outputs"
