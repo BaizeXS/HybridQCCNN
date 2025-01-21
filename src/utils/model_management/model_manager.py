@@ -1,18 +1,20 @@
-import torch
-import os
-import logging
-from collections import defaultdict
-from torch.utils.tensorboard import SummaryWriter
-from utils.training.trainer import Trainer
 import importlib.util
-import sys
-from pathlib import Path
-import numpy as np
-from typing import Union, Optional, Dict
-from models import ALL_MODELS
 import json
-from config import Config
+import logging
+import sys
+from collections import defaultdict
+from pathlib import Path
+from typing import Union, Optional, Dict
+
+import numpy as np
+import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+
+from config import Config
+from models import ALL_MODELS
+from utils.training.trainer import Trainer
+
 
 class ModelManager:
     """Model manager: responsible for managing a single model, including building, training, testing, etc.
@@ -34,7 +36,7 @@ class ModelManager:
         metrics (dict): Dictionary storing training/validation/test metrics.
         conf_matrices (dict): Dictionary storing confusion matrices.
     """
-    
+
     def __init__(self, config: Config, model_name: str = "default"):
         """Initialize model manager.
         
@@ -45,17 +47,17 @@ class ModelManager:
         # Initialize configuration
         self.config = config
         self.model_name = model_name
-        
+
         # Set device
         self.device = torch.device(config.device)
-        
+
         # Initialize directories first
         self._init_directories()
-        
+
         # Initialize logger
         self.logger = logging.getLogger(f"{self.model_name}_manager")
         self._setup_logging()
-        
+
         # Set random seed
         if hasattr(self.config, 'seed'):
             self.logger.info(f"Set random seed to {config.seed}")
@@ -64,31 +66,31 @@ class ModelManager:
             np.random.seed(config.seed)
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
-        
+
         # Initialize model
         self.model = self._build_model()
         self.model.to(self.device)
-        
+
         # Initialize metrics tracking
         self.metrics = defaultdict(lambda: defaultdict(list))
         self.conf_matrices = defaultdict(list)
-        
+
         # Initialize TensorBoard
-        self.writer = SummaryWriter(self.tensorboard_dir)
+        self.writer = SummaryWriter(self.tensorboard_dir)  # type: ignore[arg-type]
 
     def _init_directories(self):
         """Set up model directory structure."""
         self.model_dir = self.config.base_dir / self.model_name
         self.checkpoint_dir = self.model_dir / "checkpoints"  # Store checkpoints
-        self.weights_dir = self.model_dir / "weights"         # Store model weights
+        self.weights_dir = self.model_dir / "weights"  # Store model weights
         self.tensorboard_dir = self.config.tensorboard_dir / self.model_name  # TensorBoard logs
-        self.log_dir = self.model_dir / "logs"               # Log files
+        self.log_dir = self.model_dir / "logs"  # Log files
         self.metrics_dir = self.model_dir / "metrics"  # Store metrics and confusion matrix data
-        
+
         # Create necessary directories
-        for dir_path in [self.model_dir, self.checkpoint_dir, 
-                        self.weights_dir, self.tensorboard_dir, 
-                        self.log_dir, self.metrics_dir]:
+        for dir_path in [self.model_dir, self.checkpoint_dir,
+                         self.weights_dir, self.tensorboard_dir,
+                         self.log_dir, self.metrics_dir]:
             dir_path.mkdir(parents=True, exist_ok=True)
 
     def _setup_logging(self):
@@ -99,18 +101,17 @@ class ModelManager:
         """
         self.logger.setLevel(logging.INFO)
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        
+
         # Console handler
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
-        
+
         # File handler
         log_file = self.log_dir / f"{self.model_name}.log"
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
-        
 
     def _build_model(self):
         """Build model.
@@ -133,18 +134,18 @@ class ModelManager:
             module = importlib.util.module_from_spec(spec)
             sys.modules[model_path.stem] = module
             spec.loader.exec_module(module)
-            
+
             # Get model class
             model_class = getattr(module, self.config.model.name)
         else:
             model_class = ALL_MODELS.get(self.config.model.name)
-            
+
         if model_class is None:
             raise ValueError(f"Unknown model type: {self.config.model.name}")
-            
+
         # Create a copy of model_kwargs to avoid modifying the original configuration
         model_kwargs = self.config.model.model_kwargs.copy()
-        
+
         # Handle num_classes
         if 'num_classes' in model_kwargs:
             if model_kwargs['num_classes'] != self.config.data.num_classes:
@@ -154,10 +155,11 @@ class ModelManager:
                     f"Using dataset value."
                 )
         model_kwargs['num_classes'] = self.config.data.num_classes
-        
+
         return model_class(**model_kwargs)
 
-    def _get_criterion(self):
+    @staticmethod
+    def _get_criterion():
         """Get loss function.
         
         Returns:
@@ -185,16 +187,16 @@ class ModelManager:
         """
         if not self.config.training.scheduler_kwargs:
             return None
-        return torch.optim.lr_scheduler.StepLR(
+        return torch.optim.lr_scheduler.StepLR(  # type: ignore[return-value]
             self._get_optimizer(),
             **self.config.training.scheduler_kwargs
         )
 
     def train(
-        self,
-        train_loader: DataLoader,
-        val_loader: Optional[DataLoader] = None,
-        **kwargs
+            self,
+            train_loader: DataLoader,
+            val_loader: Optional[DataLoader] = None,
+            **kwargs
     ) -> None:
         """Train the model.
         
@@ -208,29 +210,29 @@ class ModelManager:
             criterion=self._get_criterion(),
             optimizer=self._get_optimizer(),
             scheduler=self._get_scheduler(),
-            device=self.device,
+            device=self.device,  # type: ignore[arg-type]
             logger=self.logger,
             **kwargs
         )
-        
+
         best_val_acc = 0.0
         self.logger.info(f"Start training {self.config.training.num_epochs} epochs")
-        
+
         for epoch in range(self.config.training.num_epochs):
             # Train
             train_metrics, train_conf = trainer.train_epoch(train_loader, epoch)
             self._update_metrics('train', train_metrics, train_conf, epoch)
-            
+
             # Validate
             if val_loader:
                 val_metrics, val_conf = trainer.validate(val_loader)
                 self._update_metrics('val', val_metrics, val_conf, epoch)
-                
+
                 # Check if it is the best model
                 if val_metrics['accuracy'] > best_val_acc:
                     best_val_acc = val_metrics['accuracy']
                     self.save_checkpoint(epoch, is_best=True)
-                
+
             # Save checkpoint periodically
             if (epoch + 1) % self.config.training.checkpoint_interval == 0:
                 self.save_checkpoint(epoch)
@@ -248,11 +250,11 @@ class ModelManager:
         trainer = Trainer(
             model=self.model,
             criterion=self._get_criterion(),
-            optimizer=None,
-            device=self.device
+            optimizer=None,  # type: ignore[arg-type]
+            device=self.device,  # type: ignore[arg-type]
         )
         test_metrics, conf_matrix = trainer.evaluate(test_loader)
-        self._update_metrics('test', test_metrics, conf_matrix, epoch=None)
+        self._update_metrics('test', test_metrics, conf_matrix, epoch=None)  # type: ignore[arg-type]
         return test_metrics
 
     def predict(self, inputs):
@@ -283,22 +285,22 @@ class ModelManager:
         # Save model-related data
         checkpoint = {
             'epoch': epoch,
-            'model_state_dict': self.model.state_dict(),
-            'optimizer_state_dict': self._get_optimizer().state_dict(),
+            'model_state_dict': self.model.state_dict(),  # type: ignore[attr-defined]
+            'optimizer_state_dict': self._get_optimizer().state_dict(),  # type: ignore[attr-defined]
         }
         if self._get_scheduler():
             checkpoint['scheduler_state_dict'] = self._get_scheduler().state_dict()
-            
+
         # Save latest checkpoint
         checkpoint_path = self.checkpoint_dir / f'checkpoint_epoch_{epoch}.pt'
         torch.save(checkpoint, checkpoint_path)
-        
+
         # Save best model if it is the best
         if is_best:
             best_path = self.weights_dir / 'best_model.pt'
             torch.save(self.model.state_dict(), best_path)
             self.logger.info(f"Save best model weights to {best_path}")
-        
+
         # Save current epoch metrics
         current_metrics = {
             'metrics': {
@@ -315,9 +317,9 @@ class ModelManager:
             'epoch': epoch
         }
         metrics_path = self.metrics_dir / f'metrics_epoch_{epoch}.json'
-        with open(metrics_path, 'w') as f:
-            json.dump(current_metrics, f, indent=2)
-        
+        with open(metrics_path, 'w', encoding='utf-8') as f:
+            json.dump(current_metrics, f, indent=2)  # type: ignore[arg-type]
+
         # Save history metrics
         history_metrics = {
             'metrics': {
@@ -334,9 +336,9 @@ class ModelManager:
             'epoch': epoch
         }
         history_path = self.metrics_dir / 'metrics_history.json'
-        with open(history_path, 'w') as f:
-            json.dump(history_metrics, f, indent=2)
-        
+        with open(history_path, 'w', encoding='utf-8') as f:
+            json.dump(history_metrics, f, indent=2)  # type: ignore[arg-type]
+
         self.logger.info(f"Save checkpoint to {checkpoint_path}")
         self.logger.info(f"Save metrics to {metrics_path}")
 
@@ -356,26 +358,26 @@ class ModelManager:
         checkpoint_path = Path(checkpoint_path)
         if not checkpoint_path.exists():
             raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_path}")
-        
+
         try:
             self.logger.info(f"Loading checkpoint: {checkpoint_path}")
             checkpoint = torch.load(
-                checkpoint_path, 
+                checkpoint_path,
                 map_location=self.device,
                 weights_only=True
             )
-            
+
             # Validate checkpoint structure
             required_keys = {'epoch', 'model_state_dict'}
             if not all(key in checkpoint for key in required_keys):
                 raise RuntimeError("Checkpoint file is corrupted or invalid")
-            
-            self.model.load_state_dict(checkpoint['model_state_dict'])
+
+            self.model.load_state_dict(checkpoint['model_state_dict'])  # type: ignore[attr-defined]
             if 'optimizer_state_dict' in checkpoint:
-                self._get_optimizer().load_state_dict(checkpoint['optimizer_state_dict'])
+                self._get_optimizer().load_state_dict(checkpoint['optimizer_state_dict'])  # type: ignore[attr-defined]
             if 'scheduler_state_dict' in checkpoint and self._get_scheduler():
                 self._get_scheduler().load_state_dict(checkpoint['scheduler_state_dict'])
-            
+
             return checkpoint['epoch']
         except Exception as e:
             self.logger.error(f"Failed to load checkpoint: {str(e)}")
@@ -405,22 +407,22 @@ class ModelManager:
                 metrics_path = self.metrics_dir / "metrics_history.json"
         else:
             metrics_path = Path(metrics_path)
-        
+
         if not metrics_path.exists():
             raise FileNotFoundError(f"Metrics file not found: {metrics_path}")
-        
+
         self.logger.info(f"Load metrics data: {metrics_path}")
         with open(metrics_path, 'r') as f:
             metrics_data = json.load(f)
-        
+
         self.metrics = defaultdict(lambda: defaultdict(list))
-        
+
         if epoch is not None:
             # For single epoch metrics, convert single values to lists
             for phase, phase_metrics in metrics_data['metrics'].items():
                 for metric_name, value in phase_metrics.items():
                     self.metrics[phase][metric_name] = [value] if value is not None else []
-            
+
             # Convert single confusion matrix to list
             self.conf_matrices = {
                 phase: [np.array(matrix)] if matrix is not None else []
@@ -431,12 +433,12 @@ class ModelManager:
             for phase, phase_metrics in metrics_data['metrics'].items():
                 for metric_name, values in phase_metrics.items():
                     self.metrics[phase][metric_name] = values
-            
+
             self.conf_matrices = {
                 phase: [np.array(matrix) for matrix in matrices]
                 for phase, matrices in metrics_data['conf_matrices'].items()
             }
-        
+
         return metrics_data['epoch']
 
     def load_weights(self, weights_path: Union[str, Path]):
@@ -451,7 +453,7 @@ class ModelManager:
         weights_path = Path(weights_path)
         if not weights_path.exists():
             raise FileNotFoundError(f"Weights file not found: {weights_path}")
-            
+
         self.logger.info(f"Load model weights: {weights_path}")
         state_dict = torch.load(weights_path, map_location=self.device)
         self.model.load_state_dict(state_dict)
@@ -469,9 +471,9 @@ class ModelManager:
         for name, value in metrics.items():
             self.metrics[phase][name].append(value)
             self.writer.add_scalar(f'{phase}/{name}', value, epoch)
-            
+
         # Save confusion matrix
-        self.conf_matrices[phase].append(conf_matrix) 
+        self.conf_matrices[phase].append(conf_matrix)
 
     def get_model_summary(self) -> Dict:
         """Get model summary including parameters count and architecture.
@@ -481,7 +483,7 @@ class ModelManager:
         """
         total_params = sum(p.numel() for p in self.model.parameters())
         trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        
+
         return {
             'model_name': self.model_name,
             'model_type': self.config.model.name,
@@ -496,4 +498,4 @@ class ModelManager:
         This method closes the TensorBoard writer if it exists.
         """
         if hasattr(self, 'writer'):
-            self.writer.close() 
+            self.writer.close()
