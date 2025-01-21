@@ -1,9 +1,11 @@
 from pathlib import Path
 from typing import Optional, Any, Union
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 import pennylane as qml
 from qutip import Bloch
+
 
 class QuantumPlotter:
     """Quantum Plotter
@@ -13,12 +15,12 @@ class QuantumPlotter:
     Attributes:
         None
     """
-    
+
+    @staticmethod
     def plot_quantum_state(
-        self,
-        state: Optional[np.ndarray] = None,
-        save_path: Optional[Union[str, Path]] = None,
-        show: bool = True
+            state: Optional[np.ndarray] = None,
+            save_path: Optional[Union[str, Path]] = None,
+            show: bool = True
     ) -> None:
         """Plot quantum state on Bloch sphere
         
@@ -33,16 +35,16 @@ class QuantumPlotter:
         sphere.sphere_color = 'lightblue'
         sphere.vector_width = 2
         sphere.figsize = [9, 9]
-        
+
         sphere.vector_color = ['r', 'g', 'b', 'purple'] if state is not None else ['r', 'g', 'b']
-        
+
         vectors = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
         if state is not None:
             vectors.append(state)
-            
+
         for vector in vectors:
             sphere.add_vectors(vector)
-            
+
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -50,15 +52,15 @@ class QuantumPlotter:
         if show:
             sphere.show()
         sphere.clear()
-        
+
+    @staticmethod
     def plot_quantum_circuit(
-        self,
-        qnode: qml.QNode,
-        inputs: Any,
-        weights: Any,
-        style: str = "pennylane",
-        save_path: Optional[Union[str, Path]] = None,
-        show: bool = True
+            qnode: qml.QNode,
+            inputs: Any,
+            weights: Any,
+            style: str = "pennylane",
+            save_path: Optional[Union[str, Path]] = None,
+            show: bool = True
     ) -> None:
         """Plot quantum circuit diagram
         
@@ -72,11 +74,11 @@ class QuantumPlotter:
         """
         qml.drawer.use_style(style)
         fig, _ = qml.draw_mpl(qnode)(inputs, weights)
-        
+
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
             plt.savefig(save_path, bbox_inches='tight', dpi=300)
         if show:
             plt.show()
-        plt.close() 
+        plt.close()

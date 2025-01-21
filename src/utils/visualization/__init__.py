@@ -7,8 +7,8 @@ This module provides plotting tools for:
 """
 
 from .metrics_plot import MetricsPlotter
-from .quantum_plot import QuantumPlotter
 from .model_plot import ModelPlotter
+from .quantum_plot import QuantumPlotter
 
 __all__ = [
     'MetricsPlotter',

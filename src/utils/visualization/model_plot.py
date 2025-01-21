@@ -1,7 +1,9 @@
 from pathlib import Path
 from typing import Callable, Optional, Union, Tuple
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
 
 class ModelPlotter:
     """Model Plotter
@@ -11,15 +13,15 @@ class ModelPlotter:
     Attributes:
         None
     """
-    
+
+    @staticmethod
     def plot_activation_function(
-        self,
-        func: Callable,
-        name: str,
-        x_range: Tuple[float, float] = (-5, 5),
-        num_points: int = 1000,
-        save_path: Optional[Union[str, Path]] = None,
-        show: bool = True
+            func: Callable,
+            name: str,
+            x_range: Tuple[float, float] = (-5, 5),
+            num_points: int = 1000,
+            save_path: Optional[Union[str, Path]] = None,
+            show: bool = True
     ) -> None:
         """Plot activation function curve
         
@@ -33,7 +35,7 @@ class ModelPlotter:
         """
         x = np.linspace(x_range[0], x_range[1], num_points)
         y = func(x)
-        
+
         plt.figure(figsize=(8, 6))
         plt.plot(x, y, label=name)
         plt.grid(True, linestyle='--', alpha=0.7)
@@ -41,11 +43,11 @@ class ModelPlotter:
         plt.xlabel("Input")
         plt.ylabel("Output")
         plt.legend()
-        
+
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
             plt.savefig(save_path, bbox_inches='tight', dpi=300)
         if show:
             plt.show()
-        plt.close() 
+        plt.close()

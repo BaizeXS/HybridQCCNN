@@ -20,8 +20,8 @@ Example:
     >>> plotter = MetricsPlotter()
 """
 
-from .model_management import ModelManager
 from .data_management import DatasetManager, CustomDataset
+from .model_management import ModelManager
 from .training import Trainer, MetricsCalculator
 from .visualization import MetricsPlotter, QuantumPlotter, ModelPlotter
 
@@ -38,10 +38,10 @@ __training__ = ['Trainer', 'MetricsCalculator']
 __visualization__ = ['MetricsPlotter', 'QuantumPlotter', 'ModelPlotter']
 
 __all__ = (
-    __model_management__ +
-    __data_management__ +
-    __training__ +
-    __visualization__
+        __model_management__ +
+        __data_management__ +
+        __training__ +
+        __visualization__
 )
 
 # Version of the utils package
