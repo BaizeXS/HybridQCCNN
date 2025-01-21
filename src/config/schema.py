@@ -10,8 +10,9 @@ The configuration classes use dataclasses for clean and type-safe configuration 
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, Union, Tuple
 from pathlib import Path
+from typing import Dict, Any, Optional, List, Union
+
 
 @dataclass
 class DataConfig:
@@ -68,25 +69,26 @@ class DataConfig:
         valid_types = {'MNIST', 'CIFAR10', 'CUSTOM'}
         if self.dataset_type not in valid_types:
             raise ValueError(f"Invalid dataset_type: {self.dataset_type}. Must be one of {valid_types}")
-        
+
         # Validate CUSTOM dataset_type
         if self.dataset_type == 'CUSTOM' and not self.custom_dataset_path:
             raise ValueError("custom_dataset_path must be provided for CUSTOM dataset_type")
-        
+
         # Validate numeric parameters
         if self.batch_size <= 0:
             raise ValueError(f"batch_size must be positive, got {self.batch_size}")
-        
+
         if not 0 < self.train_split < 1:
             raise ValueError(f"train_split must be between 0 and 1, got {self.train_split}")
-        
+
         # Validate input_shape
         if not isinstance(self.input_shape, (tuple, list)) or len(self.input_shape) != 3:
             raise ValueError(f"input_shape must be a 3-tuple (channels, height, width), got {self.input_shape}")
-        
+
         # Validate num_classes
         if self.num_classes <= 1:
             raise ValueError(f"num_classes must be greater than 1, got {self.num_classes}")
+
 
 @dataclass
 class QuantumConfig:
@@ -107,6 +109,7 @@ class QuantumConfig:
     diff_method: str = "best"
     q_device: str = "default.qubit"
     q_device_kwargs: Optional[Dict[str, Any]] = field(default_factory=dict)
+
 
 @dataclass
 class ModelConfig:
@@ -129,13 +132,14 @@ class ModelConfig:
     model_kwargs: Dict = field(default_factory=dict)
     quantum_config: Optional[QuantumConfig] = None
     custom_model_path: Optional[Union[str, Path]] = None
-    
+
     def __post_init__(self):
         """Validate and process initialization parameters."""
         if self.model_type == "custom" and not self.custom_model_path:
             raise ValueError("custom_model_path must be provided for custom models")
         if self.custom_model_path:
             self.custom_model_path = Path(self.custom_model_path)
+
 
 @dataclass
 class TrainingConfig:
@@ -162,6 +166,7 @@ class TrainingConfig:
     scheduler_kwargs: Optional[Dict[str, Any]] = field(
         default_factory=lambda: {"step_size": 30, "gamma": 0.1}
     )
+
 
 @dataclass
 class Config:
@@ -199,12 +204,12 @@ class Config:
         """Post-initialization processing"""
         if isinstance(self.output_dir, str):
             self.output_dir = Path(self.output_dir)
-        
+
     @property
     def base_dir(self) -> Path:
         """Get base directory for outputs."""
         return self.output_dir
-    
+
     @property
     def tensorboard_dir(self) -> Path:
         """Get tensorboard directory."""
@@ -212,6 +217,7 @@ class Config:
 
     def to_dict(self) -> dict:
         """Convert configuration to dictionary format."""
+
         def clean_data(obj):
             """Clean data for serialization."""
             if isinstance(obj, (tuple, set)):
@@ -235,18 +241,18 @@ class Config:
             'seed': self.seed,
             'output_dir': str(self.output_dir)
         }
-    
+
     @classmethod
     def from_dict(cls, config_dict: dict) -> 'Config':
         """Create configuration from dictionary."""
         data_dict = config_dict['data'].copy()
         data_dict['input_shape'] = tuple(data_dict['input_shape'])
         data_config = DataConfig(**data_dict)
-        
+
         quantum_config = None
         if config_dict['model']['quantum_config']:
             quantum_config = QuantumConfig(**config_dict['model']['quantum_config'])
-        
+
         model_config = ModelConfig(
             name=config_dict['model']['name'],
             model_type=config_dict['model']['model_type'],
@@ -254,9 +260,9 @@ class Config:
             quantum_config=quantum_config,
             custom_model_path=config_dict['model'].get('custom_model_path')
         )
-        
+
         training_config = TrainingConfig(**config_dict['training'])
-        
+
         return cls(
             name=config_dict['name'],
             version=config_dict['version'],
@@ -267,4 +273,4 @@ class Config:
             device=config_dict.get('device', 'cpu'),
             seed=config_dict.get('seed', 42),
             output_dir=Path(config_dict.get('output_dir', './outputs'))
-        ) 
+        )

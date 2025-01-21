@@ -7,7 +7,7 @@ This module provides:
 """
 
 from enum import Enum
-from typing import Optional, Dict, Any, Tuple, Union
+from typing import Optional, Dict, Any, Tuple, Union, Literal
 
 import pennylane as qml
 import torch
@@ -72,11 +72,12 @@ class _QuanvNd(nn.Module):
                  stride: Union[int, Tuple[int, ...]],
                  padding: Union[int, Tuple[int, ...]],
                  device: str = "cpu",
-                 qkernel: Optional[QKernel] = None,
+                 qkernel: Optional["QKernel"] = None,
                  num_qlayers: int = 2,
                  qdevice: str = "default.qubit",
                  qdevice_kwargs: Optional[Dict[str, Any]] = None,
-                 diff_method: str = "best",
+                 diff_method: Literal["best", "device", "backprop", "adjoint", 
+                                    "parameter-shift", "hadamard", "finite-diff", "spsa"] = "best",
                  output_mode: Union[OutputMode, str] = OutputMode.QUANTUM,
                  aggregation_method: Union[AggregationMethod, str] = AggregationMethod.MEAN,
                  preserve_quantum_info: bool = False
@@ -138,7 +139,8 @@ class _QuanvNd(nn.Module):
         """Abstract forward method - to be implemented by subclasses"""
         raise NotImplementedError("Forward method must be implemented in subclasses")
 
-    def _validate_basic_params(self, **kwargs):
+    @staticmethod
+    def _validate_basic_params(**kwargs) -> None:
         """Validate basic convolution parameters.
         
         Args:
@@ -194,19 +196,18 @@ class _QuanvNd(nn.Module):
         """Validate input tensor; this will be implemented in subclasses"""
         raise NotImplementedError("Input validation must be implemented in subclasses")
 
-    def _setup_quantum_components(self, qkernel, num_qlayers, qdevice, qdevice_kwargs, diff_method):
-        """Initialize quantum components of the layer.
-        
-        Args:
-            qkernel (Optional[QKernel]): Custom quantum kernel
-            num_qlayers (int): Number of quantum layers
-            qdevice (str): Quantum device name
-            qdevice_kwargs (Optional[Dict]): Quantum device parameters
-            diff_method (str): Differentiation method
-        """
+    def _setup_quantum_components(self, qkernel: Optional["QKernel"], 
+                                num_qlayers: int,
+                                qdevice: str,
+                                qdevice_kwargs: Optional[Dict[str, Any]],
+                                diff_method: Literal["best", "device", "backprop", "adjoint", 
+                                                   "parameter-shift", "hadamard", "finite-diff", "spsa"]) -> None:
+        """Initialize quantum components of the layer."""
         if qkernel is not None:
             # Use Custom QKernel
             expected_qubits = self.in_channels * torch.prod(torch.tensor(self.kernel_size)).item()
+            if not hasattr(qkernel, 'num_qubits'):
+                raise ValueError("Quantum kernel must have num_qubits attribute")
             if qkernel.num_qubits != expected_qubits:
                 raise ValueError(f"Quantum kernel must have {expected_qubits} qubits, but got {qkernel.num_qubits}")
             self.qkernel = qkernel
@@ -214,11 +215,11 @@ class _QuanvNd(nn.Module):
             # Use Default QKernel
             self.qkernel = QKernel(
                 quantum_channels=self.in_channels,
-                kernel_size=self.kernel_size,
+                kernel_size=self.kernel_size,  # type: ignore[arg-type]
                 num_param_blocks=num_qlayers
             )
 
-            # Quantum device setup
+        # Quantum device setup
         self.qdevice_kwargs = qdevice_kwargs or {}
         self.qdevice = qml.device(qdevice, wires=self.qkernel.num_qubits, **self.qdevice_kwargs)
 
@@ -239,7 +240,8 @@ class _QuanvNd(nn.Module):
             self.aggregation_weights = nn.Parameter(torch.empty(weight_shape))
             nn.init.xavier_uniform_(self.aggregation_weights)
 
-    def _to_tuple(self, x: Union[int, Tuple], n: int = 2) -> Tuple:
+    @staticmethod
+    def _to_tuple(x: Union[int, Tuple[int, ...]], n: int = 2) -> Tuple[int, ...]:
         """Convert input to n-dimensional tuple.
         
         Args:
@@ -251,7 +253,7 @@ class _QuanvNd(nn.Module):
         """
         if isinstance(x, tuple) and len(x) != n:
             raise ValueError(f"Expected tuple of length {n}, got length {len(x)}")
-        return (x,) * n if isinstance(x, int) else x
+        return tuple(x for _ in range(n)) if isinstance(x, int) else x
 
 
 class Quanv2d(_QuanvNd):

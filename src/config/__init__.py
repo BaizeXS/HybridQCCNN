@@ -17,9 +17,9 @@ Example:
 
 from .manager import ConfigManager
 from .schema import (
-    Config, 
+    Config,
     DataConfig,
-    ModelConfig, 
+    ModelConfig,
     TrainingConfig,
     QuantumConfig
 )
@@ -28,7 +28,7 @@ __all__ = [
     'ConfigManager',
     'Config',
     'DataConfig',
-    'ModelConfig', 
+    'ModelConfig',
     'TrainingConfig',
     'QuantumConfig'
 ]
@@ -39,4 +39,4 @@ __version__ = '0.1.0'
 # Package metadata
 __author__ = 'BaizeXS'
 __email__ = 'baizexs@gmail.com'
-__description__ = 'Configuration management for quantum-classical hybrid models' 
+__description__ = 'Configuration management for quantum-classical hybrid models'
