@@ -13,21 +13,15 @@ Example:
 """
 
 from typing import Dict, Type, Union
-import torch.nn as nn
 
 # Benchmark Models
 from .benchmark import ClassicNet, HybridNet
-
-# VGG Models
-from .vgg import SimpleVGG, HybridVGG
-
 # GoogLeNet Models
 from .googlenet import (
     SimpleGoogLeNet, HybridGoogLeNet,
     BasicConv2d, SimpleInception, SimpleInceptionAux,
     HybridInception, HybridConv2d
 )
-
 # ResNet Models
 from .resnet import (
     SimpleResNet, HybridResNet,
@@ -35,6 +29,8 @@ from .resnet import (
     simple_resnet18, simple_resnet34,
     hybrid_resnet18, hybrid_resnet34
 )
+# VGG Models
+from .vgg import SimpleVGG, HybridVGG
 
 # Type alias for model factory functions
 ModelFactory = Type[Union[
