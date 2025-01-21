@@ -1,8 +1,10 @@
-import torch
+from pathlib import Path
+
 import numpy as np
 import pennylane as qml
-from pathlib import Path
+
 from utils.visualization import MetricsPlotter, QuantumPlotter, ModelPlotter
+
 
 def metrics_plotter_example(output_dir: Path):
     """Demonstrate MetricsPlotter functionality
@@ -13,7 +15,7 @@ def metrics_plotter_example(output_dir: Path):
     3. Plot metrics comparison across models
     """
     print("MetricsPlotter example:")
-    
+
     # Create example training metrics
     metrics_data = {
         'train': {
@@ -25,13 +27,13 @@ def metrics_plotter_example(output_dir: Path):
             'accuracy': [0.75, 0.8, 0.85, 0.87, 0.9]
         }
     }
-    
+
     # Create example confusion matrix
     conf_matrix = np.array([
         [90, 10],
         [5, 95]
     ])
-    
+
     # Create example multi-model metrics
     multi_model_metrics = {
         'model1': {
@@ -55,10 +57,10 @@ def metrics_plotter_example(output_dir: Path):
             }
         }
     }
-    
+
     # Create MetricsPlotter instance
     plotter = MetricsPlotter()
-    
+
     # 1. Plot single metric
     plotter.plot_single_metric(
         data=metrics_data,
@@ -67,7 +69,7 @@ def metrics_plotter_example(output_dir: Path):
         save_path=output_dir / 'single_metric.png',
         show=True
     )
-    
+
     # 2. Plot confusion matrix
     plotter.plot_confusion_matrix(
         conf_matrix=conf_matrix,
@@ -75,7 +77,7 @@ def metrics_plotter_example(output_dir: Path):
         save_path=output_dir / 'confusion_matrix.png',
         show=True
     )
-    
+
     # 3. Plot metrics comparison
     plotter.plot_metrics_comparison(
         data=multi_model_metrics,
@@ -86,6 +88,7 @@ def metrics_plotter_example(output_dir: Path):
         show=True
     )
 
+
 def quantum_plotter_example(output_dir: Path):
     """Demonstrate QuantumPlotter functionality
     
@@ -94,29 +97,30 @@ def quantum_plotter_example(output_dir: Path):
     2. Plot quantum circuit diagram
     """
     print("\nQuantumPlotter example:")
-    
+
     # Create quantum state example
     state = np.array([0, 0, 1])
-    
+
     # Create simple quantum circuit
     dev = qml.device('default.qubit', wires=2)
+
     @qml.qnode(dev)
     def quantum_circuit(x, weights):
         qml.RX(x[0], wires=0)
         qml.RY(x[1], wires=1)
         qml.CNOT(wires=[0, 1])
         return qml.expval(qml.PauliZ(0))
-    
+
     # Create QuantumPlotter instance
     plotter = QuantumPlotter()
-    
+
     # 1. Plot quantum state
     plotter.plot_quantum_state(
         state=state,
         save_path=output_dir / 'quantum_state.png',
         show=True
     )
-    
+
     # 2. Plot quantum circuit
     plotter.plot_quantum_circuit(
         qnode=quantum_circuit,
@@ -126,6 +130,7 @@ def quantum_plotter_example(output_dir: Path):
         show=True
     )
 
+
 def model_plotter_example(output_dir: Path):
     """Demonstrate ModelPlotter functionality
     
@@ -134,25 +139,25 @@ def model_plotter_example(output_dir: Path):
     2. Plot with different input ranges
     """
     print("\nModelPlotter example:")
-    
+
     # Create ModelPlotter instance
     plotter = ModelPlotter()
-    
+
     # 1. Plot ReLU activation
     def relu(x):
         return np.maximum(0, x)
-    
+
     plotter.plot_activation_function(
         func=relu,
         name='ReLU',
         save_path=output_dir / 'relu.png',
         show=True
     )
-    
+
     # 2. Plot Sigmoid activation with different ranges
     def sigmoid(x):
         return 1 / (1 + np.exp(-x))
-    
+
     for x_range in [(-5, 5), (-10, 10), (0, 1)]:
         plotter.plot_activation_function(
             func=sigmoid,
@@ -162,18 +167,20 @@ def model_plotter_example(output_dir: Path):
             show=True
         )
 
+
 def main():
     """Run all visualization examples"""
     # Create output directory
     output_dir = Path("outputs/visualization_demo")
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Run examples
     metrics_plotter_example(output_dir)
     quantum_plotter_example(output_dir)
     model_plotter_example(output_dir)
-    
+
     print(f"\nAll plots have been saved to: {output_dir}")
+
 
 if __name__ == "__main__":
     main()

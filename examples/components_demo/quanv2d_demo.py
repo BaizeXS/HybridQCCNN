@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
+
 from components.quanv import Quanv2d, OutputMode, AggregationMethod
+
 
 def basic_quanv2d_example():
     """
@@ -8,71 +10,75 @@ def basic_quanv2d_example():
     """
     # Create a simple quantum convolution layer
     quanv = Quanv2d(
-        in_channels=3,          # Number of input channels (e.g., RGB image)
-        out_channels=8,         # Number of output channels
-        kernel_size=2,          # Convolution kernel size 2x2
-        stride=1,               # Stride
-        padding=1,              # Padding
-        output_mode=OutputMode.CLASSICAL,           # Use classical output mode
+        in_channels=3,  # Number of input channels (e.g., RGB image)
+        out_channels=8,  # Number of output channels
+        kernel_size=2,  # Convolution kernel size 2x2
+        stride=1,  # Stride
+        padding=1,  # Padding
+        output_mode=OutputMode.CLASSICAL,  # Use classical output mode
         aggregation_method=AggregationMethod.MEAN,  # Use mean aggregation
     )
 
     # Create an example input tensor (batch_size, channels, height, width)
     x = torch.randn(2, 3, 14, 14)
-    
+
     # Forward propagation
     output = quanv(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
+
 
 def quantum_mode_example():
     """
     Example of using quantum output mode
     """
     quanv = Quanv2d(
-        in_channels=3,          # Number of input channels
-        out_channels=8,         # Number of output channels
-        kernel_size=2,          # Convolution kernel size 2x2
-        stride=1,               # Stride
-        padding=1,              # Padding
-        output_mode=OutputMode.QUANTUM,     # Use quantum output mode
-        preserve_quantum_info=True,         # Preserve quantum information
+        in_channels=3,  # Number of input channels
+        out_channels=8,  # Number of output channels
+        kernel_size=2,  # Convolution kernel size 2x2
+        stride=1,  # Stride
+        padding=1,  # Padding
+        output_mode=OutputMode.QUANTUM,  # Use quantum output mode
+        preserve_quantum_info=True,  # Preserve quantum information
     )
 
     # Create an example input tensor
     x = torch.randn(2, 3, 14, 14)
-    
+
     # Forward propagation
     output = quanv(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
+
 
 def weighted_aggregation_example():
     """
     Example of using weighted aggregation method
     """
     quanv = Quanv2d(
-        in_channels=3,          # Number of input channels
-        out_channels=8,         # Number of output channels
-        kernel_size=2,          # Convolution kernel size 2x2
-        stride=1,               # Stride
-        padding=1,              # Padding
-        output_mode=OutputMode.CLASSICAL,           # Use classical output mode
+        in_channels=3,  # Number of input channels
+        out_channels=8,  # Number of output channels
+        kernel_size=2,  # Convolution kernel size 2x2
+        stride=1,  # Stride
+        padding=1,  # Padding
+        output_mode=OutputMode.CLASSICAL,  # Use classical output mode
         aggregation_method=AggregationMethod.WEIGHTED,  # Use weighted aggregation
     )
 
     # Create an example input tensor
     x = torch.randn(2, 3, 14, 14)
-    
+
     # Forward propagation
     output = quanv(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
 
+
 def hybrid_cnn_example():
     """
     Example of creating a hybrid CNN model, combining quantum convolution and classical convolution
     """
+
     class HybridCNN(nn.Module):
         def __init__(self):
             super().__init__()
@@ -98,14 +104,15 @@ def hybrid_cnn_example():
 
     # Create model
     model = HybridCNN()
-    
+
     # Create example input
     x = torch.randn(2, 3, 14, 14)
-    
+
     # Forward propagation
     output = model(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
+
 
 if __name__ == "__main__":
     print("Basic quantum convolution example:")
@@ -115,4 +122,4 @@ if __name__ == "__main__":
     print("\nWeighted aggregation example:")
     weighted_aggregation_example()
     print("\nHybrid CNN model example:")
-    hybrid_cnn_example() 
+    hybrid_cnn_example()

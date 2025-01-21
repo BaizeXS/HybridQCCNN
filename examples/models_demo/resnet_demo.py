@@ -1,9 +1,11 @@
 import torch
+
+from components.quanv import OutputMode, AggregationMethod
 from models.resnet import (
     simple_resnet18, simple_resnet34,
     hybrid_resnet18, hybrid_resnet34
 )
-from components.quanv import OutputMode, AggregationMethod
+
 
 def simple_resnet_example():
     """
@@ -11,15 +13,16 @@ def simple_resnet_example():
     """
     # Create a classical ResNet model
     model = simple_resnet18(num_classes=10)
-    
+
     # Create an example input tensor (batch_size, channels, height, width)
     x = torch.randn(2, 3, 32, 32)  # CIFAR format input
-    
+
     # Forward propagation
     output = model(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
     print(f"Model structure:\n{model}")
+
 
 def hybrid_resnet_basic_example():
     """
@@ -31,15 +34,16 @@ def hybrid_resnet_basic_example():
         output_mode=OutputMode.QUANTUM,
         aggregation_method=AggregationMethod.MEAN
     )
-    
+
     # Create an example input tensor
     x = torch.randn(2, 3, 32, 32)  # CIFAR format input
-    
+
     # Forward propagation
     output = model(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
     print(f"Model structure:\n{model}")
+
 
 def hybrid_resnet_classical_mode_example():
     """
@@ -50,11 +54,12 @@ def hybrid_resnet_classical_mode_example():
         output_mode=OutputMode.CLASSICAL,
         aggregation_method=AggregationMethod.WEIGHTED
     )
-    
+
     x = torch.randn(2, 3, 32, 32)
     output = model(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
+
 
 def compare_resnet_models_example():
     """
@@ -67,10 +72,10 @@ def compare_resnet_models_example():
         'HybridResNet18': hybrid_resnet18(num_classes=10),
         'HybridResNet34': hybrid_resnet34(num_classes=10)
     }
-    
+
     # Create the same input
     x = torch.randn(2, 3, 32, 32)
-    
+
     print("Model comparison:")
     # Compare outputs and parameters for each model
     for name, model in models.items():
@@ -78,10 +83,11 @@ def compare_resnet_models_example():
         output = model(x)
         print(f"\n{name}:")
         print(f"Output shape: {output.shape}")
-        
+
         # Count parameters
         params = sum(p.numel() for p in model.parameters())
         print(f"Number of parameters: {params:,}")
+
 
 if __name__ == "__main__":
     print("SimpleResNet example:")
@@ -91,4 +97,4 @@ if __name__ == "__main__":
     print("\nHybridResNet example with classical output mode:")
     hybrid_resnet_classical_mode_example()
     print("\nModel comparison example:")
-    compare_resnet_models_example() 
+    compare_resnet_models_example()
