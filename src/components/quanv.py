@@ -76,8 +76,8 @@ class _QuanvNd(nn.Module):
                  num_qlayers: int = 2,
                  qdevice: str = "default.qubit",
                  qdevice_kwargs: Optional[Dict[str, Any]] = None,
-                 diff_method: Literal["best", "device", "backprop", "adjoint", 
-                                    "parameter-shift", "hadamard", "finite-diff", "spsa"] = "best",
+                 diff_method: Literal["best", "device", "backprop", "adjoint",
+                 "parameter-shift", "hadamard", "finite-diff", "spsa"] = "best",
                  output_mode: Union[OutputMode, str] = OutputMode.QUANTUM,
                  aggregation_method: Union[AggregationMethod, str] = AggregationMethod.MEAN,
                  preserve_quantum_info: bool = False
@@ -196,12 +196,12 @@ class _QuanvNd(nn.Module):
         """Validate input tensor; this will be implemented in subclasses"""
         raise NotImplementedError("Input validation must be implemented in subclasses")
 
-    def _setup_quantum_components(self, qkernel: Optional["QKernel"], 
-                                num_qlayers: int,
-                                qdevice: str,
-                                qdevice_kwargs: Optional[Dict[str, Any]],
-                                diff_method: Literal["best", "device", "backprop", "adjoint", 
-                                                   "parameter-shift", "hadamard", "finite-diff", "spsa"]) -> None:
+    def _setup_quantum_components(self, qkernel: Optional["QKernel"],
+                                  num_qlayers: int,
+                                  qdevice: str,
+                                  qdevice_kwargs: Optional[Dict[str, Any]],
+                                  diff_method: Literal["best", "device", "backprop", "adjoint",
+                                  "parameter-shift", "hadamard", "finite-diff", "spsa"]) -> None:
         """Initialize quantum components of the layer."""
         if qkernel is not None:
             # Use Custom QKernel
