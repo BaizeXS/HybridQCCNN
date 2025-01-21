@@ -5,8 +5,8 @@ This module provides:
 2. MetricsCalculator - Metrics computation and tracking
 """
 
-from .trainer import Trainer
 from .metrics import MetricsCalculator
+from .trainer import Trainer
 
 __all__ = [
     'Trainer',

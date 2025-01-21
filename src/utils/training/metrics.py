@@ -1,7 +1,9 @@
-import torch
-import numpy as np
 from typing import Dict, Tuple
+
+import numpy as np
+import torch
 from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
+
 
 class MetricsCalculator:
     """Metrics calculator for evaluating model performance.
@@ -14,9 +16,10 @@ class MetricsCalculator:
     Attributes:
         None
     """
-    
+
     @staticmethod
-    def calculate(outputs: torch.Tensor, targets: torch.Tensor, loss: torch.Tensor) -> Tuple[Dict[str, float], np.ndarray]:
+    def calculate(outputs: torch.Tensor, targets: torch.Tensor, loss: torch.Tensor) -> Tuple[
+        Dict[str, float], np.ndarray]:
         """Calculate metrics for a batch of data.
         
         Args:
@@ -33,14 +36,14 @@ class MetricsCalculator:
         """
         # Get prediction results
         _, predictions = torch.max(outputs, dim=1)
-        
+
         # Convert to numpy array for sklearn
         predictions = predictions.cpu().numpy()
         targets = targets.cpu().numpy()
-        
+
         # Get the number of classes
         num_classes = outputs.size(1)
-        
+
         # Calculate basic metrics
         metrics = {
             'loss': loss.item(),
@@ -49,12 +52,12 @@ class MetricsCalculator:
             'recall': recall_score(targets, predictions, average='macro', zero_division=0),
             'f1': f1_score(targets, predictions, average='macro', zero_division=0)
         }
-        
+
         # Calculate confusion matrix, ensuring correct number of classes
         conf_matrix = confusion_matrix(
-            targets, 
-            predictions, 
+            targets,
+            predictions,
             labels=range(num_classes)
         )
-        
+
         return metrics, conf_matrix

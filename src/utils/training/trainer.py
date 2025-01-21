@@ -1,12 +1,15 @@
-import torch
+import logging
+import time
 from collections import defaultdict
 from typing import Dict, Optional, Tuple
+
+import numpy as np
+import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import logging
-import numpy as np
-import time
+
 from .metrics import MetricsCalculator
+
 
 class Trainer:
     """A trainer class that handles model training, validation and evaluation.
@@ -31,17 +34,17 @@ class Trainer:
         is_googlenet (bool): Flag indicating if the model is GoogLeNet.
         memory_tracking (bool): Whether to track GPU memory usage.
     """
-    
+
     def __init__(
-        self, 
-        model: torch.nn.Module,
-        criterion: torch.nn.Module,
-        optimizer: torch.optim.Optimizer,
-        device: str = 'cpu',
-        scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
-        aux_weight: float = 0.4,
-        logger: Optional[logging.Logger] = None,
-        memory_tracking: bool = False
+            self,
+            model: torch.nn.Module,
+            criterion: torch.nn.Module,
+            optimizer: torch.optim.Optimizer,
+            device: str = 'cpu',
+            scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = None,
+            aux_weight: float = 0.4,
+            logger: Optional[logging.Logger] = None,
+            memory_tracking: bool = False
     ):
         """Initialize Trainer.
         
@@ -83,59 +86,59 @@ class Trainer:
         metrics = defaultdict(float)
         total_samples = 0
         conf_matrix = None
-        
+
         # Start time of the epoch
         epoch_start_time = time.time()
-        
+
         # Create progress bar
         pbar = tqdm(dataloader, desc=f'Epoch {epoch}', leave=True)
-        
+
         for batch in pbar:
             batch_start_time = time.time()
-            
+
             batch_metrics, batch_conf_matrix = self._train_step(batch)
             batch_size = batch[0].size(0)
             total_samples += batch_size
-            
+
             batch_time = time.time() - batch_start_time
-            
+
             # Accumulate batch metrics
             for name, value in batch_metrics.items():
                 metrics[name] += value * batch_size
-                
+
             # Update confusion matrix
             if conf_matrix is None:
                 conf_matrix = batch_conf_matrix
             else:
                 conf_matrix += batch_conf_matrix
-                
+
             # Update progress bar, add time information
             pbar.set_postfix({
                 'loss': batch_metrics['loss'],
                 'acc': batch_metrics['accuracy'],
                 'batch_time': f'{batch_time:.3f}s'
             })
-        
+
         # Calculate average metrics
-        avg_metrics = {name: value/total_samples for name, value in metrics.items()}
-        
+        avg_metrics = {name: value / total_samples for name, value in metrics.items()}
+
         # Calculate the time of the entire epoch
         epoch_time = time.time() - epoch_start_time
-        
+
         # Log the epoch metrics, add time information
         self.logger.info(
-            f"Train Epoch {epoch} - " + 
+            f"Train Epoch {epoch} - " +
             " - ".join([f"{k}: {v:.4f}" for k, v in avg_metrics.items()]) +
             f" - epoch_time: {epoch_time:.2f}s"
         )
-        
+
         # Update learning rate at the end of the epoch
         if self.scheduler is not None:
             self.scheduler.step()
-        
+
         # Add time information to metrics
         avg_metrics['epoch_time'] = epoch_time
-        
+
         return avg_metrics, conf_matrix
 
     def validate(self, dataloader: DataLoader, phase: str = 'val') -> Tuple[Dict[str, float], np.ndarray]:
@@ -154,52 +157,52 @@ class Trainer:
         metrics = defaultdict(float)
         total_samples = 0
         conf_matrix = None
-        
+
         # Start time of the validation phase
         phase_start_time = time.time()
-        
+
         # Create progress bar
         pbar = tqdm(dataloader, desc=f'{phase.capitalize()} Phase', leave=True)
-        
+
         with torch.no_grad():
             for batch in pbar:
                 batch_start_time = time.time()
-                
+
                 batch_metrics, batch_conf_matrix = self._validate_step(batch)
                 batch_size = batch[0].size(0)
                 total_samples += batch_size
-                
+
                 batch_time = time.time() - batch_start_time
-                
+
                 for name, value in batch_metrics.items():
                     metrics[name] += value * batch_size
-                    
+
                 if conf_matrix is None:
                     conf_matrix = batch_conf_matrix
                 else:
                     conf_matrix += batch_conf_matrix
-                    
+
                 pbar.set_postfix({
                     'loss': batch_metrics['loss'],
                     'acc': batch_metrics['accuracy'],
                     'batch_time': f'{batch_time:.3f}s'
                 })
-        
+
         # Calculate average metrics
-        avg_metrics = {name: value/total_samples for name, value in metrics.items()}
-        
+        avg_metrics = {name: value / total_samples for name, value in metrics.items()}
+
         # Calculate the time of the entire validation phase
         phase_time = time.time() - phase_start_time
-        
+
         self.logger.info(
-            f"{phase.capitalize()} Phase - " + 
+            f"{phase.capitalize()} Phase - " +
             " - ".join([f"{k}: {v:.4f}" for k, v in avg_metrics.items()]) +
             f" - time: {phase_time:.2f}s"
         )
-        
+
         # Add time information to metrics
         avg_metrics['phase_time'] = phase_time
-        
+
         return avg_metrics, conf_matrix
 
     def evaluate(self, dataloader: DataLoader) -> Tuple[Dict[str, float], np.ndarray]:
@@ -217,7 +220,7 @@ class Trainer:
                 - A confusion matrix as a NumPy array for the test set.
         """
         return self.validate(dataloader, phase='test')
-    
+
     def _train_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[Dict[str, float], np.ndarray]:
         """Perform a single training step.
         
@@ -232,7 +235,7 @@ class Trainer:
         inputs, targets = batch
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
-        
+
         # Forward propagation
         self.optimizer.zero_grad()
         # For GoogLeNet model, process auxiliary classifier output
@@ -244,11 +247,11 @@ class Trainer:
         else:
             output = self.model(inputs)
             loss = self.criterion(output, targets)
-        
+
         # Backward propagation
         loss.backward()
         self.optimizer.step()
-        
+
         return self.metrics_calculator.calculate(output, targets, loss)
 
     def _validate_step(self, batch: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[Dict[str, float], np.ndarray]:
@@ -268,7 +271,7 @@ class Trainer:
         inputs, targets = batch
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
-        
+
         outputs = self.model(inputs)
         # For GoogLeNet model, use only the main output during validation
         if self.is_googlenet:
@@ -288,8 +291,8 @@ class Trainer:
             Only logs if self.memory_tracking is True and CUDA is available.
         """
         if self.memory_tracking and torch.cuda.is_available():
-            allocated = torch.cuda.memory_allocated() / 1024**2
-            cached = torch.cuda.memory_reserved() / 1024**2
+            allocated = torch.cuda.memory_allocated() / 1024 ** 2
+            cached = torch.cuda.memory_reserved() / 1024 ** 2
             self.logger.info(f"GPU Memory: {allocated:.1f}MB allocated, {cached:.1f}MB cached")
 
     def cleanup(self):
@@ -307,7 +310,7 @@ class Trainer:
         # Clear CUDA cache if using GPU
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        
+
         # Remove circular references
         self.model = None
         self.optimizer = None
