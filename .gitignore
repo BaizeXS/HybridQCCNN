@@ -523,6 +523,8 @@ Temporary Items
 # Datasets
 datasets/*
 !datasets/.gitkeep
+!datasets/CustomDatasets/
+datasets/CustomDatasets/*
 !datasets/CustomDatasets/.gitkeep
 
 # Logs
