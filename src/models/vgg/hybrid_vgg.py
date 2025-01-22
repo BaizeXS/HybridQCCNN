@@ -16,10 +16,11 @@ class HybridVGG(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
             # Layer 2: Quantum Convolution
-            # TODO: Reduce the dimension first and then increase the dimension
+            # Reduce the dimension first and then increase the dimension
             nn.Conv2d(32, 3, kernel_size=1, stride=1, padding=0),
             Quanv2d(3, 64, kernel_size=2, stride=1, padding=1, **kwargs),
-            # No need to introduce ReLU here, quantum convolution has already introduced nonlinearity.
+            # No need to introduce ReLU here,
+            # because quantum computing has already introduced nonlinearity.
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),

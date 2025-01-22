@@ -1,9 +1,11 @@
 import torch
 
-from components.quanv import OutputMode, AggregationMethod
+from components.quanv import AggregationMethod, OutputMode
 from models.resnet import (
-    simple_resnet18, simple_resnet34,
-    hybrid_resnet18, hybrid_resnet34
+    hybrid_resnet18,
+    hybrid_resnet34,
+    simple_resnet18,
+    simple_resnet34,
 )
 
 
@@ -32,7 +34,7 @@ def hybrid_resnet_basic_example():
     model = hybrid_resnet18(
         num_classes=10,
         output_mode=OutputMode.QUANTUM,
-        aggregation_method=AggregationMethod.MEAN
+        aggregation_method=AggregationMethod.MEAN,
     )
 
     # Create an example input tensor
@@ -52,7 +54,7 @@ def hybrid_resnet_classical_mode_example():
     model = hybrid_resnet34(
         num_classes=10,
         output_mode=OutputMode.CLASSICAL,
-        aggregation_method=AggregationMethod.WEIGHTED
+        aggregation_method=AggregationMethod.WEIGHTED,
     )
 
     x = torch.randn(2, 3, 32, 32)
@@ -67,10 +69,10 @@ def compare_resnet_models_example():
     """
     # Create models with different depths
     models = {
-        'SimpleResNet18': simple_resnet18(num_classes=10),
-        'SimpleResNet34': simple_resnet34(num_classes=10),
-        'HybridResNet18': hybrid_resnet18(num_classes=10),
-        'HybridResNet34': hybrid_resnet34(num_classes=10)
+        "SimpleResNet18": simple_resnet18(num_classes=10),
+        "SimpleResNet34": simple_resnet34(num_classes=10),
+        "HybridResNet18": hybrid_resnet18(num_classes=10),
+        "HybridResNet34": hybrid_resnet34(num_classes=10),
     }
 
     # Create the same input

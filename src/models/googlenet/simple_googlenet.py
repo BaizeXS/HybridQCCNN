@@ -9,11 +9,11 @@ from torch import Tensor
 class SimpleGoogLeNet(nn.Module):
 
     def __init__(
-            self,
-            num_classes: int = 10,
-            aux_logits: bool = True,
-            dropout: float = 0.4,
-            dropout_aux: float = 0.5,
+        self,
+        num_classes: int = 10,
+        aux_logits: bool = True,
+        dropout: float = 0.4,
+        dropout_aux: float = 0.5,
     ):
         super(SimpleGoogLeNet, self).__init__()
 
@@ -73,33 +73,35 @@ class SimpleGoogLeNet(nn.Module):
 class SimpleInception(nn.Module):
 
     def __init__(
-            self,
-            in_channels: int,
-            ch1x1: int,
-            ch3x3red: int,
-            ch3x3: int,
-            ch5x5red: int,
-            ch5x5: int,
-            pool_proj: int):
+        self,
+        in_channels: int,
+        ch1x1: int,
+        ch3x3red: int,
+        ch3x3: int,
+        ch5x5red: int,
+        ch5x5: int,
+        pool_proj: int,
+    ):
         super(SimpleInception, self).__init__()
 
         self.branch1 = BasicConv2d(in_channels, ch1x1, kernel_size=1)
 
         self.branch2 = nn.Sequential(
             BasicConv2d(in_channels, ch3x3red, kernel_size=1),
-            BasicConv2d(ch3x3red, ch3x3, kernel_size=3, padding=1)
+            BasicConv2d(ch3x3red, ch3x3, kernel_size=3, padding=1),
         )
 
         self.branch3 = nn.Sequential(
             BasicConv2d(in_channels, ch5x5red, kernel_size=1),
-            # We need to add an explicit padding layer here as the maximum quantum kernel size is 2 in this case.
+            # We need to add an explicit padding layer here,
+            # because the maximum quantum kernel size is 2 in this case.
             nn.ZeroPad2d((1, 0, 1, 0)),
-            BasicConv2d(ch5x5red, ch5x5, kernel_size=2, stride=1, padding=0)
+            BasicConv2d(ch5x5red, ch5x5, kernel_size=2, stride=1, padding=0),
         )
 
         self.branch4 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
-            BasicConv2d(in_channels, pool_proj, kernel_size=1)
+            BasicConv2d(in_channels, pool_proj, kernel_size=1),
         )
 
     def forward(self, x):
@@ -115,10 +117,10 @@ class SimpleInception(nn.Module):
 class SimpleInceptionAux(nn.Module):
 
     def __init__(
-            self,
-            in_channels: int,
-            num_classes: int,
-            dropout: float = 0.5,
+        self,
+        in_channels: int,
+        num_classes: int,
+        dropout: float = 0.5,
     ):
         super(SimpleInceptionAux, self).__init__()
         self.averagePool = nn.AvgPool2d(kernel_size=2, stride=2)

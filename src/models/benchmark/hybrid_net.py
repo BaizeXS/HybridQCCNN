@@ -8,9 +8,13 @@ class HybridNet(nn.Module):
 
     def __init__(self, num_classes=10, **kwargs):
         super(HybridNet, self).__init__()
-        self.quanv = Quanv2d(in_channels=1, out_channels=4, kernel_size=3, stride=1, padding=1, **kwargs)
+        self.quanv = Quanv2d(
+            in_channels=1, out_channels=4, kernel_size=3, stride=1, padding=1, **kwargs
+        )
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.conv = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=3, stride=1, padding=1)
+        self.conv = nn.Conv2d(
+            in_channels=4, out_channels=8, kernel_size=3, stride=1, padding=1
+        )
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.fc1 = nn.Linear(8 * 7 * 7, 128)
         self.fc2 = nn.Linear(128, num_classes)

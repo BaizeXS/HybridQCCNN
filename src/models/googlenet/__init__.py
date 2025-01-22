@@ -12,15 +12,20 @@ This module provides:
    - HybridConv2d - Hybrid convolution block
 """
 
-from .hybrid_googlenet import HybridGoogLeNet, HybridInception, HybridConv2d
-from .simple_googlenet import SimpleGoogLeNet, SimpleInception, SimpleInceptionAux, BasicConv2d
+from .hybrid_googlenet import HybridConv2d, HybridGoogLeNet, HybridInception
+from .simple_googlenet import (
+    BasicConv2d,
+    SimpleGoogLeNet,
+    SimpleInception,
+    SimpleInceptionAux,
+)
 
 __all__ = [
-    'SimpleGoogLeNet',
-    'SimpleInception',
-    'SimpleInceptionAux',
-    'BasicConv2d',
-    'HybridGoogLeNet',
-    'HybridInception',
-    'HybridConv2d'
+    "SimpleGoogLeNet",
+    "SimpleInception",
+    "SimpleInceptionAux",
+    "BasicConv2d",
+    "HybridGoogLeNet",
+    "HybridInception",
+    "HybridConv2d",
 ]

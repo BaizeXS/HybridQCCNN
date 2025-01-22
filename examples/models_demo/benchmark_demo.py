@@ -1,6 +1,6 @@
 import torch
 
-from components.quanv import OutputMode, AggregationMethod
+from components.quanv import AggregationMethod, OutputMode
 from models.benchmark import ClassicNet, HybridNet
 
 
@@ -29,7 +29,7 @@ def hybrid_net_basic_example():
     model = HybridNet(
         num_classes=10,
         output_mode=OutputMode.QUANTUM,
-        aggregation_method=AggregationMethod.MEAN
+        aggregation_method=AggregationMethod.MEAN,
     )
 
     # Create an example input tensor
@@ -49,7 +49,7 @@ def hybrid_net_classical_mode_example():
     model = HybridNet(
         num_classes=10,
         output_mode=OutputMode.CLASSICAL,
-        aggregation_method=AggregationMethod.WEIGHTED
+        aggregation_method=AggregationMethod.WEIGHTED,
     )
 
     x = torch.randn(2, 1, 28, 28)

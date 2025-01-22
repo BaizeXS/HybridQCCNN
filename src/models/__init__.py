@@ -16,29 +16,46 @@ from typing import Dict, Type, Union
 
 # Benchmark Models
 from .benchmark import ClassicNet, HybridNet
+
 # GoogLeNet Models
 from .googlenet import (
-    SimpleGoogLeNet, HybridGoogLeNet,
-    BasicConv2d, SimpleInception, SimpleInceptionAux,
-    HybridInception, HybridConv2d
+    BasicConv2d,
+    HybridConv2d,
+    HybridGoogLeNet,
+    HybridInception,
+    SimpleGoogLeNet,
+    SimpleInception,
+    SimpleInceptionAux,
 )
+
 # ResNet Models
 from .resnet import (
-    SimpleResNet, HybridResNet,
-    BasicBlock, HybridBlock,
-    simple_resnet18, simple_resnet34,
-    hybrid_resnet18, hybrid_resnet34
+    BasicBlock,
+    HybridBlock,
+    HybridResNet,
+    SimpleResNet,
+    hybrid_resnet18,
+    hybrid_resnet34,
+    simple_resnet18,
+    simple_resnet34,
 )
+
 # VGG Models
-from .vgg import SimpleVGG, HybridVGG
+from .vgg import HybridVGG, SimpleVGG
 
 # Type alias for model factory functions
-ModelFactory = Type[Union[
-    ClassicNet, HybridNet,
-    SimpleVGG, HybridVGG,
-    SimpleGoogLeNet, HybridGoogLeNet,
-    SimpleResNet, HybridResNet
-]]
+ModelFactory = Type[
+    Union[
+        ClassicNet,
+        HybridNet,
+        SimpleVGG,
+        HybridVGG,
+        SimpleGoogLeNet,
+        HybridGoogLeNet,
+        SimpleResNet,
+        HybridResNet,
+    ]
+]
 
 # Dictionary containing all available models
 ALL_MODELS: Dict[str, ModelFactory] = {
@@ -58,30 +75,40 @@ ALL_MODELS: Dict[str, ModelFactory] = {
     "simple_resnet34": simple_resnet34,
     "hybrid_resnet18": hybrid_resnet18,
     "hybrid_resnet34": hybrid_resnet34,
-}
+}  # type: ignore
 
 __all__ = [
     # Benchmark Models
-    'ClassicNet', 'HybridNet',
+    "ClassicNet",
+    "HybridNet",
     # VGG Models
-    'SimpleVGG', 'HybridVGG',
+    "SimpleVGG",
+    "HybridVGG",
     # GoogLeNet Models and Components
-    'SimpleGoogLeNet', 'HybridGoogLeNet',
-    'BasicConv2d', 'SimpleInception', 'SimpleInceptionAux',
-    'HybridInception', 'HybridConv2d',
+    "SimpleGoogLeNet",
+    "HybridGoogLeNet",
+    "BasicConv2d",
+    "SimpleInception",
+    "SimpleInceptionAux",
+    "HybridInception",
+    "HybridConv2d",
     # ResNet Models and Components
-    'SimpleResNet', 'HybridResNet',
-    'BasicBlock', 'HybridBlock',
-    'simple_resnet18', 'simple_resnet34',
-    'hybrid_resnet18', 'hybrid_resnet34',
+    "SimpleResNet",
+    "HybridResNet",
+    "BasicBlock",
+    "HybridBlock",
+    "simple_resnet18",
+    "simple_resnet34",
+    "hybrid_resnet18",
+    "hybrid_resnet34",
     # Model Registry
-    'ALL_MODELS'
+    "ALL_MODELS",
 ]
 
 # Version of the models package
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
 # Package metadata
-__author__ = 'BaizeXS'
-__email__ = 'baizexs@gmail.com'
-__description__ = 'Neural network architectures for quantum-classical hybrid systems'
+__author__ = "BaizeXS"
+__email__ = "baizexs@gmail.com"
+__description__ = "Neural network architectures for quantum-classical hybrid systems"

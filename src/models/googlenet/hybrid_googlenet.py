@@ -5,18 +5,19 @@ import torch.nn as nn
 from torch import Tensor
 
 from components.quanv import Quanv2d
+
 from .simple_googlenet import BasicConv2d, SimpleInception, SimpleInceptionAux
 
 
 class HybridGoogLeNet(nn.Module):
 
     def __init__(
-            self,
-            num_classes: int = 10,
-            aux_logits: bool = True,
-            dropout: float = 0.4,
-            dropout_aux: float = 0.5,
-            **kwargs: Any,
+        self,
+        num_classes: int = 10,
+        aux_logits: bool = True,
+        dropout: float = 0.4,
+        dropout_aux: float = 0.5,
+        **kwargs: Any,
     ):
         super(HybridGoogLeNet, self).__init__()
 
@@ -76,15 +77,15 @@ class HybridGoogLeNet(nn.Module):
 class HybridInception(nn.Module):
 
     def __init__(
-            self,
-            in_channels: int,
-            ch1x1: int,
-            ch3x3red: int,
-            ch3x3: int,
-            ch5x5red: int,
-            ch5x5: int,
-            pool_proj: int,
-            **kwargs: Any,
+        self,
+        in_channels: int,
+        ch1x1: int,
+        ch3x3red: int,
+        ch3x3: int,
+        ch5x5red: int,
+        ch5x5: int,
+        pool_proj: int,
+        **kwargs: Any,
     ):
         super(HybridInception, self).__init__()
 
@@ -92,19 +93,20 @@ class HybridInception(nn.Module):
 
         self.branch2 = nn.Sequential(
             BasicConv2d(in_channels, ch3x3red, kernel_size=1),
-            BasicConv2d(ch3x3red, ch3x3, kernel_size=3, padding=1)
+            BasicConv2d(ch3x3red, ch3x3, kernel_size=3, padding=1),
         )
 
         self.branch3 = nn.Sequential(
             BasicConv2d(in_channels, ch5x5red, kernel_size=1),
-            # We need to add an explicit padding layer here as the maximum quantum kernel size is 2 in this case.
+            # We need to add an explicit padding layer here,
+            # because the maximum quantum kernel size is 2 in this case.
             nn.ZeroPad2d((1, 0, 1, 0)),
-            HybridConv2d(ch5x5red, ch5x5, kernel_size=2, stride=1, padding=0, **kwargs)
+            HybridConv2d(ch5x5red, ch5x5, kernel_size=2, stride=1, padding=0, **kwargs),
         )
 
         self.branch4 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
-            BasicConv2d(in_channels, pool_proj, kernel_size=1)
+            BasicConv2d(in_channels, pool_proj, kernel_size=1),
         )
 
     def forward(self, x):

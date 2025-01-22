@@ -1,7 +1,7 @@
 import torch
 
-from components.quanv import OutputMode, AggregationMethod
-from models.googlenet import SimpleGoogLeNet, HybridGoogLeNet
+from components.quanv import AggregationMethod, OutputMode
+from models.googlenet import HybridGoogLeNet, SimpleGoogLeNet
 
 
 def simple_googlenet_example():
@@ -34,7 +34,7 @@ def hybrid_googlenet_basic_example():
         num_classes=10,
         aux_logits=True,
         output_mode=OutputMode.QUANTUM,
-        aggregation_method=AggregationMethod.MEAN
+        aggregation_method=AggregationMethod.MEAN,
     )
 
     # Create an example input tensor
@@ -59,7 +59,7 @@ def hybrid_googlenet_classical_mode_example():
         num_classes=10,
         aux_logits=False,
         output_mode=OutputMode.CLASSICAL,
-        aggregation_method=AggregationMethod.WEIGHTED
+        aggregation_method=AggregationMethod.WEIGHTED,
     )
 
     x = torch.randn(2, 3, 32, 32)
@@ -90,7 +90,7 @@ def compare_googlenet_models_example():
     # Compare number of parameters
     classic_params = sum(p.numel() for p in classic_model.parameters())
     hybrid_params = sum(p.numel() for p in hybrid_model.parameters())
-    print(f"\nNumber of parameters:")
+    print("\nNumber of parameters:")
     print(f"SimpleGoogLeNet: {classic_params:,}")
     print(f"HybridGoogLeNet: {hybrid_params:,}")
 

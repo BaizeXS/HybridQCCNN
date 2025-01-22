@@ -1,16 +1,16 @@
 import pytest
 import torch
 
-from components.quanv import OutputMode, AggregationMethod
-from models.vgg import SimpleVGG, HybridVGG
+from components.quanv import AggregationMethod, OutputMode
+from models.vgg import HybridVGG, SimpleVGG
 
 # Test parameters
 TEST_PARAMS = {
-    'batch_size': 2,
-    'channels': 3,
-    'height': 32,
-    'width': 32,
-    'num_classes': 10
+    "batch_size": 2,
+    "channels": 3,
+    "height": 32,
+    "width": 32,
+    "num_classes": 10,
 }
 
 
@@ -18,23 +18,23 @@ TEST_PARAMS = {
 def sample_input():
     """Return a standard test input tensor"""
     return torch.randn(
-        TEST_PARAMS['batch_size'],
-        TEST_PARAMS['channels'],
-        TEST_PARAMS['height'],
-        TEST_PARAMS['width']
+        TEST_PARAMS["batch_size"],
+        TEST_PARAMS["channels"],
+        TEST_PARAMS["height"],
+        TEST_PARAMS["width"],
     )
 
 
 @pytest.fixture
 def simple_vgg():
     """Return a default configured SimpleVGG"""
-    return SimpleVGG(num_classes=TEST_PARAMS['num_classes'])
+    return SimpleVGG(num_classes=TEST_PARAMS["num_classes"])
 
 
 @pytest.fixture
 def hybrid_vgg():
     """Return a default configured HybridVGG"""
-    return HybridVGG(num_classes=TEST_PARAMS['num_classes'])
+    return HybridVGG(num_classes=TEST_PARAMS["num_classes"])
 
 
 def test_simple_vgg_initialization(simple_vgg):
@@ -45,7 +45,7 @@ def test_simple_vgg_initialization(simple_vgg):
     assert isinstance(simple_vgg.classifier, torch.nn.Sequential)
 
     # Test output layer dimension
-    assert simple_vgg.classifier[-1].out_features == TEST_PARAMS['num_classes']
+    assert simple_vgg.classifier[-1].out_features == TEST_PARAMS["num_classes"]
 
 
 def test_hybrid_vgg_initialization(hybrid_vgg):
@@ -56,11 +56,14 @@ def test_hybrid_vgg_initialization(hybrid_vgg):
     assert isinstance(hybrid_vgg.classifier, torch.nn.Sequential)
 
     # Test output layer dimension
-    assert hybrid_vgg.classifier[-1].out_features == TEST_PARAMS['num_classes']
+    assert hybrid_vgg.classifier[-1].out_features == TEST_PARAMS["num_classes"]
 
     # Test quantum layer existence
-    quantum_layers = [layer for layer in hybrid_vgg.features if
-                      isinstance(layer, torch.nn.Module) and 'Quanv' in layer.__class__.__name__]
+    quantum_layers = [
+        layer
+        for layer in hybrid_vgg.features
+        if isinstance(layer, torch.nn.Module) and "Quanv" in layer.__class__.__name__
+    ]
     assert len(quantum_layers) > 0
 
 
@@ -69,7 +72,7 @@ def test_simple_vgg_forward(simple_vgg, sample_input):
     output = simple_vgg(sample_input)
 
     # Check output dimension
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
     # Check output validity
@@ -82,7 +85,7 @@ def test_hybrid_vgg_forward(hybrid_vgg, sample_input):
     output = hybrid_vgg(sample_input)
 
     # Check output dimension
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
     # Check output validity
@@ -90,37 +93,30 @@ def test_hybrid_vgg_forward(hybrid_vgg, sample_input):
     assert not torch.isinf(output).any()
 
 
-@pytest.mark.parametrize("output_mode", [
-    OutputMode.QUANTUM,
-    OutputMode.CLASSICAL
-])
+@pytest.mark.parametrize("output_mode", [OutputMode.QUANTUM, OutputMode.CLASSICAL])
 def test_hybrid_vgg_output_modes(sample_input, output_mode):
     """Test HybridVGG different output modes"""
-    model = HybridVGG(
-        num_classes=TEST_PARAMS['num_classes'],
-        output_mode=output_mode
-    )
+    model = HybridVGG(num_classes=TEST_PARAMS["num_classes"], output_mode=output_mode)
 
     output = model(sample_input)
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
 
-@pytest.mark.parametrize("method", [
-    AggregationMethod.MEAN,
-    AggregationMethod.SUM,
-    AggregationMethod.WEIGHTED
-])
+@pytest.mark.parametrize(
+    "method",
+    [AggregationMethod.MEAN, AggregationMethod.SUM, AggregationMethod.WEIGHTED],
+)
 def test_hybrid_vgg_aggregation_methods(sample_input, method):
     """Test HybridVGG different aggregation methods"""
     model = HybridVGG(
-        num_classes=TEST_PARAMS['num_classes'],
+        num_classes=TEST_PARAMS["num_classes"],
         output_mode=OutputMode.CLASSICAL,
-        aggregation_method=method
+        aggregation_method=method,
     )
 
     output = model(sample_input)
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
 

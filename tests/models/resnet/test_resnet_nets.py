@@ -1,19 +1,21 @@
 import pytest
 import torch
 
-from components.quanv import OutputMode, AggregationMethod
+from components.quanv import AggregationMethod, OutputMode
 from models.resnet import (
-    simple_resnet18, simple_resnet34,
-    hybrid_resnet18, hybrid_resnet34
+    hybrid_resnet18,
+    hybrid_resnet34,
+    simple_resnet18,
+    simple_resnet34,
 )
 
 # Test parameters
 TEST_PARAMS = {
-    'batch_size': 2,
-    'channels': 3,
-    'height': 32,
-    'width': 32,
-    'num_classes': 10
+    "batch_size": 2,
+    "channels": 3,
+    "height": 32,
+    "width": 32,
+    "num_classes": 10,
 }
 
 
@@ -21,10 +23,10 @@ TEST_PARAMS = {
 def sample_input():
     """Return a standard test input tensor"""
     return torch.randn(
-        TEST_PARAMS['batch_size'],
-        TEST_PARAMS['channels'],
-        TEST_PARAMS['height'],
-        TEST_PARAMS['width']
+        TEST_PARAMS["batch_size"],
+        TEST_PARAMS["channels"],
+        TEST_PARAMS["height"],
+        TEST_PARAMS["width"],
     )
 
 
@@ -32,16 +34,16 @@ def sample_input():
 def simple_resnet(request):
     """Return SimpleResNet models with different depths"""
     if request.param == 18:
-        return simple_resnet18(num_classes=TEST_PARAMS['num_classes'])
-    return simple_resnet34(num_classes=TEST_PARAMS['num_classes'])
+        return simple_resnet18(num_classes=TEST_PARAMS["num_classes"])
+    return simple_resnet34(num_classes=TEST_PARAMS["num_classes"])
 
 
 @pytest.fixture(params=[18, 34])
 def hybrid_resnet(request):
     """Return HybridResNet models with different depths"""
     if request.param == 18:
-        return hybrid_resnet18(num_classes=TEST_PARAMS['num_classes'])
-    return hybrid_resnet34(num_classes=TEST_PARAMS['num_classes'])
+        return hybrid_resnet18(num_classes=TEST_PARAMS["num_classes"])
+    return hybrid_resnet34(num_classes=TEST_PARAMS["num_classes"])
 
 
 def test_simple_resnet_initialization(simple_resnet):
@@ -53,7 +55,7 @@ def test_simple_resnet_initialization(simple_resnet):
     assert isinstance(simple_resnet.fc, torch.nn.Linear)
 
     # Test output layer dimension
-    assert simple_resnet.fc.out_features == TEST_PARAMS['num_classes']
+    assert simple_resnet.fc.out_features == TEST_PARAMS["num_classes"]
 
 
 def test_hybrid_resnet_initialization(hybrid_resnet):
@@ -65,12 +67,12 @@ def test_hybrid_resnet_initialization(hybrid_resnet):
     assert isinstance(hybrid_resnet.fc, torch.nn.Linear)
 
     # Test output layer dimension
-    assert hybrid_resnet.fc.out_features == TEST_PARAMS['num_classes']
+    assert hybrid_resnet.fc.out_features == TEST_PARAMS["num_classes"]
 
     # Test quantum layer existence
     quantum_layers = []
     for module in hybrid_resnet.modules():
-        if hasattr(module, 'quanv'):
+        if hasattr(module, "quanv"):
             quantum_layers.append(module)
     assert len(quantum_layers) > 0
 
@@ -80,7 +82,7 @@ def test_simple_resnet_forward(simple_resnet, sample_input):
     output = simple_resnet(sample_input)
 
     # Check output dimension
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
     # Check output validity
@@ -93,7 +95,7 @@ def test_hybrid_resnet_forward(hybrid_resnet, sample_input):
     output = hybrid_resnet(sample_input)
 
     # Check output dimension
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
     # Check output validity
@@ -101,37 +103,32 @@ def test_hybrid_resnet_forward(hybrid_resnet, sample_input):
     assert not torch.isinf(output).any()
 
 
-@pytest.mark.parametrize("output_mode", [
-    OutputMode.QUANTUM,
-    OutputMode.CLASSICAL
-])
+@pytest.mark.parametrize("output_mode", [OutputMode.QUANTUM, OutputMode.CLASSICAL])
 def test_hybrid_resnet_output_modes(sample_input, output_mode):
     """Test HybridResNet different output modes"""
     model = hybrid_resnet18(
-        num_classes=TEST_PARAMS['num_classes'],
-        output_mode=output_mode
+        num_classes=TEST_PARAMS["num_classes"], output_mode=output_mode
     )
 
     output = model(sample_input)
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
 
-@pytest.mark.parametrize("method", [
-    AggregationMethod.MEAN,
-    AggregationMethod.SUM,
-    AggregationMethod.WEIGHTED
-])
+@pytest.mark.parametrize(
+    "method",
+    [AggregationMethod.MEAN, AggregationMethod.SUM, AggregationMethod.WEIGHTED],
+)
 def test_hybrid_resnet_aggregation_methods(sample_input, method):
     """Test HybridResNet different aggregation methods"""
     model = hybrid_resnet18(
-        num_classes=TEST_PARAMS['num_classes'],
+        num_classes=TEST_PARAMS["num_classes"],
         output_mode=OutputMode.CLASSICAL,
-        aggregation_method=method
+        aggregation_method=method,
     )
 
     output = model(sample_input)
-    expected_shape = (TEST_PARAMS['batch_size'], TEST_PARAMS['num_classes'])
+    expected_shape = (TEST_PARAMS["batch_size"], TEST_PARAMS["num_classes"])
     assert output.shape == expected_shape
 
 
