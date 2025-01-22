@@ -16,27 +16,21 @@ Example:
 """
 
 from .manager import ConfigManager
-from .schema import (
-    Config,
-    DataConfig,
-    ModelConfig,
-    TrainingConfig,
-    QuantumConfig
-)
+from .schema import Config, DataConfig, ModelConfig, QuantumConfig, TrainingConfig
 
 __all__ = [
-    'ConfigManager',
-    'Config',
-    'DataConfig',
-    'ModelConfig',
-    'TrainingConfig',
-    'QuantumConfig'
+    "ConfigManager",
+    "Config",
+    "DataConfig",
+    "ModelConfig",
+    "TrainingConfig",
+    "QuantumConfig",
 ]
 
 # Version of the config package
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
 # Package metadata
-__author__ = 'BaizeXS'
-__email__ = 'baizexs@gmail.com'
-__description__ = 'Configuration management for quantum-classical hybrid models'
+__author__ = "BaizeXS"
+__email__ = "baizexs@gmail.com"
+__description__ = "Configuration management for quantum-classical hybrid models"

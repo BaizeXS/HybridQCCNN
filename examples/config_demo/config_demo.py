@@ -1,6 +1,13 @@
 from pathlib import Path
 
-from config import ConfigManager, Config, ModelConfig, DataConfig, TrainingConfig, QuantumConfig
+from config import (
+    Config,
+    ConfigManager,
+    DataConfig,
+    ModelConfig,
+    QuantumConfig,
+    TrainingConfig,
+)
 
 
 def basic_config_example():
@@ -16,19 +23,15 @@ def basic_config_example():
         batch_size=64,
         train_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}],
         val_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}],
-        test_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}]
+        test_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}],
     )
 
     model_config = ModelConfig(
-        name="SimpleVGG",
-        model_type="classic",
-        model_kwargs={"num_classes": 10}
+        name="SimpleVGG", model_type="classic", model_kwargs={"num_classes": 10}
     )
 
     training_config = TrainingConfig(
-        learning_rate=0.001,
-        num_epochs=10,
-        checkpoint_interval=1
+        learning_rate=0.001, num_epochs=10, checkpoint_interval=1
     )
 
     config = Config(
@@ -37,7 +40,7 @@ def basic_config_example():
         description="Basic MNIST classification model",
         data=data_config,
         model=model_config,
-        training=training_config
+        training=training_config,
     )
 
     print(f"Configuration name: {config.name}")
@@ -55,18 +58,15 @@ def hybrid_model_config_example():
         q_layers=2,
         diff_method="parameter-shift",
         q_device="default.qubit",
-        q_device_kwargs={"shots": 1000}
+        q_device_kwargs={"shots": 1000},
     )
 
     # Create model configuration with quantum settings
     model_config = ModelConfig(
         name="HybridVGG",
         model_type="hybrid",
-        model_kwargs={
-            "num_classes": 10,
-            "quantum_channels": 3
-        },
-        quantum_config=quantum_config
+        model_kwargs={"num_classes": 10, "quantum_channels": 3},
+        quantum_config=quantum_config,
     )
 
     # Create complete configuration
@@ -82,21 +82,19 @@ def hybrid_model_config_example():
             batch_size=32,
             train_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}],
             val_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}],
-            test_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}]
+            test_transforms=[{"name": "Normalize", "mean": 0.5, "std": 0.5}],
         ),
         model=model_config,
         training=TrainingConfig(
-            learning_rate=0.0005,
-            num_epochs=5,
-            checkpoint_interval=1
+            learning_rate=0.0005, num_epochs=5, checkpoint_interval=1
         ),
-        device="cpu"  # Quantum simulations typically run on CPU
+        device="cpu",  # Quantum simulations typically run on CPU
     )
 
     print(f"Quantum configuration:\n{config.model.quantum_config}")
     print(f"Model type: {config.model.model_type}")
     print(f"Device: {config.device}")
-    print(f"Output directory structure:")
+    print("Output directory structure:")
     print(f"  Base dir: {config.base_dir}")
     print(f"  Tensorboard dir: {config.tensorboard_dir}")
 
@@ -119,14 +117,12 @@ def config_manager_example():
             dataset_type="CIFAR10",
             train_transforms=[],
             val_transforms=[],
-            test_transforms=[]
+            test_transforms=[],
         ),
         model=ModelConfig(
-            name="SimpleResNet",
-            model_type="classic",
-            model_kwargs={"num_classes": 10}
+            name="SimpleResNet", model_type="classic", model_kwargs={"num_classes": 10}
         ),
-        training=TrainingConfig()
+        training=TrainingConfig(),
     )
 
     # Save configuration
