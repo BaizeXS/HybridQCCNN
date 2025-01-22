@@ -12,7 +12,7 @@ def basic_qkernel_example():
     qkernel = QKernel(
         quantum_channels=1,  # Single channel input
         kernel_size=2,  # 2x2 convolution kernel
-        num_param_blocks=2  # 2 parameter blocks
+        num_param_blocks=2,  # 2 parameter blocks
     )
 
     # Create example input data (4 inputs corresponding to a 2x2 convolution kernel)
@@ -58,17 +58,15 @@ def custom_circuit_example():
         return [qml.expval(qml.PauliX(wires=i)) for i in range(num_qubits)]
 
     # Define weight shapes
-    weight_shapes = {
-        "weights": (2, 4)  # (num_param_blocks, num_qubits)
-    }
+    weight_shapes = {"weights": (2, 4)}  # (num_param_blocks, num_qubits)
 
     # Create QKernel using custom circuit
     custom_qkernel = QKernel(
         quantum_channels=1,
         kernel_size=2,
         num_param_blocks=2,
-        kernel_circuit=custom_quantum_circuit,
-        weight_shapes=weight_shapes
+        kernel_circuit=custom_quantum_circuit,  # type: ignore
+        weight_shapes=weight_shapes,
     )
 
     # Test custom circuit
@@ -86,7 +84,7 @@ def multi_channel_example():
     qkernel = QKernel(
         quantum_channels=3,  # 3 channels
         kernel_size=2,  # 2x2 convolution kernel
-        num_param_blocks=3  # 3 parameter blocks
+        num_param_blocks=3,  # 3 parameter blocks
     )
 
     # Calculate the required number of qubits
@@ -108,11 +106,7 @@ def parameter_visualization_example():
     """
     Example of parameter visualization for a QKernel
     """
-    qkernel = QKernel(
-        quantum_channels=1,
-        kernel_size=2,
-        num_param_blocks=4
-    )
+    qkernel = QKernel(quantum_channels=1, kernel_size=2, num_param_blocks=4)
 
     # Create random weights and analyze their distribution
     weights = torch.randn(*qkernel.weight_shapes["weights"])

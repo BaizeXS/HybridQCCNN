@@ -7,7 +7,7 @@ This module provides:
 """
 
 from enum import Enum
-from typing import Optional, Dict, Any, Tuple, Union, Literal
+from typing import Any, Dict, Literal, Optional, Tuple, Union
 
 import pennylane as qml
 import torch
@@ -21,37 +21,39 @@ __all__ = ["_QuanvNd", "Quanv2d", "OutputMode", "AggregationMethod"]
 
 class OutputMode(str, Enum):
     """Quantum convolution output modes.
-    
+
     Modes:
         QUANTUM: Keep full quantum output
         CLASSICAL: Aggregate quantum outputs
     """
-    QUANTUM = 'quantum'
-    CLASSICAL = 'classical'
+
+    QUANTUM = "quantum"
+    CLASSICAL = "classical"
 
 
 class AggregationMethod(str, Enum):
     """Methods for aggregating quantum outputs.
-    
+
     Methods:
         MEAN: Average of quantum measurements
         SUM: Sum of quantum measurements
         WEIGHTED: Weighted sum of quantum measurements
     """
-    MEAN = 'mean'
-    SUM = 'sum'
-    WEIGHTED = 'weighted'
+
+    MEAN = "mean"
+    SUM = "sum"
+    WEIGHTED = "weighted"
 
 
 class _QuanvNd(nn.Module):
     """Base class for N-dimensional quantum convolution layers.
-    
+
     This class provides:
     - Basic parameter validation
     - Input preprocessing
     - Quantum output processing
     - Output aggregation methods
-    
+
     Attributes:
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels.
@@ -65,25 +67,34 @@ class _QuanvNd(nn.Module):
 
     EPSILON = 1e-8  # Used to avoid division by zero
 
-    def __init__(self,
-                 in_channels: int,
-                 out_channels: int,
-                 kernel_size: Union[int, Tuple[int, ...]],
-                 stride: Union[int, Tuple[int, ...]],
-                 padding: Union[int, Tuple[int, ...]],
-                 device: str = "cpu",
-                 qkernel: Optional["QKernel"] = None,
-                 num_qlayers: int = 2,
-                 qdevice: str = "default.qubit",
-                 qdevice_kwargs: Optional[Dict[str, Any]] = None,
-                 diff_method: Literal["best", "device", "backprop", "adjoint",
-                 "parameter-shift", "hadamard", "finite-diff", "spsa"] = "best",
-                 output_mode: Union[OutputMode, str] = OutputMode.QUANTUM,
-                 aggregation_method: Union[AggregationMethod, str] = AggregationMethod.MEAN,
-                 preserve_quantum_info: bool = False
-                 ):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Union[int, Tuple[int, ...]],
+        stride: Union[int, Tuple[int, ...]],
+        padding: Union[int, Tuple[int, ...]],
+        device: str = "cpu",
+        qkernel: Optional["QKernel"] = None,
+        num_qlayers: int = 2,
+        qdevice: str = "default.qubit",
+        qdevice_kwargs: Optional[Dict[str, Any]] = None,
+        diff_method: Literal[
+            "best",
+            "device",
+            "backprop",
+            "adjoint",
+            "parameter-shift",
+            "hadamard",
+            "finite-diff",
+            "spsa",
+        ] = "best",
+        output_mode: Union[OutputMode, str] = OutputMode.QUANTUM,
+        aggregation_method: Union[AggregationMethod, str] = AggregationMethod.MEAN,
+        preserve_quantum_info: bool = False,
+    ):
         """Initialize quantum convolution layer.
-        
+
         Args:
             in_channels (int): Number of input channels.
             out_channels (int): Number of output channels.
@@ -108,10 +119,10 @@ class _QuanvNd(nn.Module):
             out_channels=out_channels,
             kernel_size=kernel_size,
             stride=stride,
-            padding=padding
+            padding=padding,
         )
 
-        # Classical convolution parameters  
+        # Classical convolution parameters
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = self._to_tuple(kernel_size, n=2)
@@ -126,13 +137,15 @@ class _QuanvNd(nn.Module):
         # Preserve quantum info setting
         self.preserve_quantum_info = preserve_quantum_info
 
-        # Initialize quantum components  
-        self._setup_quantum_components(qkernel, num_qlayers, qdevice, qdevice_kwargs, diff_method)
+        # Initialize quantum components
+        self._setup_quantum_components(
+            qkernel, num_qlayers, qdevice, qdevice_kwargs, diff_method
+        )
 
-        # Initialize aggregation weights if needed  
+        # Initialize aggregation weights if needed
         self._setup_aggregation_weights()
 
-        # Used to store the last input  
+        # Used to store the last input
         self.last_input = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -142,7 +155,7 @@ class _QuanvNd(nn.Module):
     @staticmethod
     def _validate_basic_params(**kwargs) -> None:
         """Validate basic convolution parameters.
-        
+
         Args:
             **kwargs: Dictionary containing parameters to validate:
                 - in_channels (int): Number of input channels
@@ -150,44 +163,44 @@ class _QuanvNd(nn.Module):
                 - kernel_size (Union[int, Tuple]): Convolution kernel size
                 - stride (Union[int, Tuple]): Convolution stride
                 - padding (Union[int, Tuple]): Convolution padding
-                
+
         Raises:
             ValueError: If any parameter is invalid
         """
         # Validate in_channels
-        if not isinstance(kwargs['in_channels'], int) or kwargs['in_channels'] <= 0:
+        if not isinstance(kwargs["in_channels"], int) or kwargs["in_channels"] <= 0:
             raise ValueError("in_channels must be positive")
 
         # Validate out_channels
-        if not isinstance(kwargs['out_channels'], int) or kwargs['out_channels'] <= 0:
+        if not isinstance(kwargs["out_channels"], int) or kwargs["out_channels"] <= 0:
             raise ValueError("out_channels must be positive")
 
         # Validate kernel_size
-        if isinstance(kwargs['kernel_size'], int):
-            if kwargs['kernel_size'] <= 0:
+        if isinstance(kwargs["kernel_size"], int):
+            if kwargs["kernel_size"] <= 0:
                 raise ValueError("kernel_size must be positive")
-        elif isinstance(kwargs['kernel_size'], tuple):
-            if any(not isinstance(k, int) or k <= 0 for k in kwargs['kernel_size']):
+        elif isinstance(kwargs["kernel_size"], tuple):
+            if any(not isinstance(k, int) or k <= 0 for k in kwargs["kernel_size"]):
                 raise ValueError("kernel_size must be positive")
         else:
             raise ValueError("kernel_size must be an integer or tuple")
 
         # Validate stride
-        if isinstance(kwargs['stride'], int):
-            if kwargs['stride'] <= 0:
+        if isinstance(kwargs["stride"], int):
+            if kwargs["stride"] <= 0:
                 raise ValueError("stride must be positive")
-        elif isinstance(kwargs['stride'], tuple):
-            if any(not isinstance(s, int) or s <= 0 for s in kwargs['stride']):
+        elif isinstance(kwargs["stride"], tuple):
+            if any(not isinstance(s, int) or s <= 0 for s in kwargs["stride"]):
                 raise ValueError("stride must be positive")
         else:
             raise ValueError("stride must be an integer or tuple")
 
         # Validate padding
-        if isinstance(kwargs['padding'], int):
-            if kwargs['padding'] < 0:
+        if isinstance(kwargs["padding"], int):
+            if kwargs["padding"] < 0:
                 raise ValueError("padding cannot be negative")
-        elif isinstance(kwargs['padding'], tuple):
-            if any(not isinstance(p, int) or p < 0 for p in kwargs['padding']):
+        elif isinstance(kwargs["padding"], tuple):
+            if any(not isinstance(p, int) or p < 0 for p in kwargs["padding"]):
                 raise ValueError("padding cannot be negative")
         else:
             raise ValueError("padding must be an integer or tuple")
@@ -196,46 +209,67 @@ class _QuanvNd(nn.Module):
         """Validate input tensor; this will be implemented in subclasses"""
         raise NotImplementedError("Input validation must be implemented in subclasses")
 
-    def _setup_quantum_components(self, qkernel: Optional["QKernel"],
-                                  num_qlayers: int,
-                                  qdevice: str,
-                                  qdevice_kwargs: Optional[Dict[str, Any]],
-                                  diff_method: Literal["best", "device", "backprop", "adjoint",
-                                  "parameter-shift", "hadamard", "finite-diff", "spsa"]) -> None:
+    def _setup_quantum_components(
+        self,
+        qkernel: Optional["QKernel"],
+        num_qlayers: int,
+        qdevice: str,
+        qdevice_kwargs: Optional[Dict[str, Any]],
+        diff_method: Literal[
+            "best",
+            "device",
+            "backprop",
+            "adjoint",
+            "parameter-shift",
+            "hadamard",
+            "finite-diff",
+            "spsa",
+        ],
+    ) -> None:
         """Initialize quantum components of the layer."""
         if qkernel is not None:
             # Use Custom QKernel
-            expected_qubits = self.in_channels * torch.prod(torch.tensor(self.kernel_size)).item()
-            if not hasattr(qkernel, 'num_qubits'):
+            expected_qubits = (
+                self.in_channels * torch.prod(torch.tensor(self.kernel_size)).item()
+            )
+            if not hasattr(qkernel, "num_qubits"):
                 raise ValueError("Quantum kernel must have num_qubits attribute")
             if qkernel.num_qubits != expected_qubits:
-                raise ValueError(f"Quantum kernel must have {expected_qubits} qubits, but got {qkernel.num_qubits}")
+                raise ValueError(
+                    f"Quantum kernel must have {expected_qubits} qubits, "
+                    f"but got {qkernel.num_qubits}"
+                )
             self.qkernel = qkernel
         else:
             # Use Default QKernel
             self.qkernel = QKernel(
                 quantum_channels=self.in_channels,
                 kernel_size=self.kernel_size,  # type: ignore[arg-type]
-                num_param_blocks=num_qlayers
+                num_param_blocks=num_qlayers,
             )
 
         # Quantum device setup
         self.qdevice_kwargs = qdevice_kwargs or {}
-        self.qdevice = qml.device(qdevice, wires=self.qkernel.num_qubits, **self.qdevice_kwargs)
+        self.qdevice = qml.device(
+            qdevice, wires=self.qkernel.num_qubits, **self.qdevice_kwargs
+        )
 
-        # Quantum neural network setup  
-        self.qnode = qml.QNode(self.qkernel.circuit, device=self.qdevice, interface="torch", diff_method=diff_method)
+        # Quantum neural network setup
+        self.qnode = qml.QNode(
+            self.qkernel.circuit,
+            device=self.qdevice,
+            interface="torch",
+            diff_method=diff_method,
+        )
         self.qlayer = qml.qnn.TorchLayer(self.qnode, self.qkernel.weight_shapes)
 
     def _setup_aggregation_weights(self) -> None:
-        """Initialize weights for weighted aggregation method.
-        
-        Creates trainable weights if using WEIGHTED aggregation method.
-        """
+        """Initialize weights for weighted aggregation method."""
         if self.aggregation_method == AggregationMethod.WEIGHTED:
+            kernel_size_prod = int(torch.prod(torch.tensor(self.kernel_size)).item())
             weight_shape = (
                 self.in_channels,  # Input channels
-                torch.prod(torch.tensor(self.kernel_size)).item()  # Weight vector size
+                kernel_size_prod,  # Weight vector size
             )
             self.aggregation_weights = nn.Parameter(torch.empty(weight_shape))
             nn.init.xavier_uniform_(self.aggregation_weights)
@@ -243,11 +277,11 @@ class _QuanvNd(nn.Module):
     @staticmethod
     def _to_tuple(x: Union[int, Tuple[int, ...]], n: int = 2) -> Tuple[int, ...]:
         """Convert input to n-dimensional tuple.
-        
+
         Args:
             x (Union[int, Tuple]): Input value to convert
             n (int): Target tuple dimension
-            
+
         Returns:
             Tuple: n-dimensional tuple
         """
@@ -258,19 +292,25 @@ class _QuanvNd(nn.Module):
 
 class Quanv2d(_QuanvNd):
     """2D quantum convolution layer.
-    
+
     This class implements a 2D quantum convolution operation that:
     - Processes input data through a quantum circuit
     - Applies quantum measurements
     - Aggregates quantum outputs into classical format
-    
+
     The layer supports different output modes and aggregation methods.
-    
+
     Attributes:
         All attributes inherited from _QuanvNd base class
     """
 
     def __init__(self, *args, **kwargs):
+        """Initialize 2D quantum convolution layer.
+
+        Args:
+            *args: Positional arguments passed to parent class
+            **kwargs: Keyword arguments passed to parent class
+        """
         super().__init__(*args, **kwargs)
 
         # Set input channels based on preserve_quantum_info and output_mode
@@ -282,25 +322,23 @@ class Quanv2d(_QuanvNd):
 
         # Initialize 1x1 convolution layer
         self.classical_conv = nn.Conv2d(
-            in_channels=conv_in_channels,
-            out_channels=self.out_channels,
-            kernel_size=1
+            in_channels=conv_in_channels, out_channels=self.out_channels, kernel_size=1
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass of the quantum convolution layer.
-        
+
         Process steps:
         1. Input validation and preprocessing
         2. Quantum circuit computation
         3. Output processing based on mode
-        
+
         Args:
             x (torch.Tensor): Input tensor of shape (batch_size, in_channels, height, width)
-            
+
         Returns:
             torch.Tensor: Processed output tensor
-            
+
         Raises:
             ValueError: If input dimensions are invalid
         """
@@ -311,7 +349,9 @@ class Quanv2d(_QuanvNd):
     def _validate_input(self, x: torch.Tensor) -> None:
         """Check if input dimensions are as expected for 2D"""
         if x.dim() != 4:
-            raise ValueError(f"Expected 4D input tensor for 2D convolution, got {x.dim()}D")
+            raise ValueError(
+                f"Expected 4D input tensor for 2D convolution, got {x.dim()}D"
+            )
         if x.size(1) != self.in_channels:
             raise ValueError(f"Expected {self.in_channels} channels, got {x.size(1)}")
 
@@ -325,18 +365,19 @@ class Quanv2d(_QuanvNd):
 
         # 2. Extract patches
         patches = F.unfold(
-            x,
-            kernel_size=self.kernel_size,
-            stride=self.stride,
-            padding=self.padding
-        ).permute(0, 2, 1)  # (B, L, C*K*K)
+            x, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding
+        ).permute(
+            0, 2, 1
+        )  # (B, L, C*K*K)
 
         # 3. Apply quantum layer to each patch
         quantum_outputs = []
         for patch in patches.reshape(-1, patches.shape[-1]):
             quantum_output = self.qlayer(patch)
             quantum_outputs.append(quantum_output)
-        quantum_outputs = torch.stack(quantum_outputs).reshape(bs, patches.shape[1], -1)  # (B, L, C*K*K)
+        quantum_outputs = torch.stack(quantum_outputs).reshape(
+            bs, patches.shape[1], -1
+        )  # (B, L, C*K*K)
 
         # 4. Process based on mode
         if self.output_mode == OutputMode.QUANTUM:
@@ -356,10 +397,10 @@ class Quanv2d(_QuanvNd):
 
     def _preprocess_input(self, x: torch.Tensor) -> torch.Tensor:
         """Normalize input data to [-1, 1] range for each batch.
-        
+
         Args:
             x (torch.Tensor): Input tensor to normalize
-            
+
         Returns:
             torch.Tensor: Normalized input tensor in range [-1, 1]
         """
@@ -369,16 +410,17 @@ class Quanv2d(_QuanvNd):
         x_normalized = (2 * (x - x_min) / (x_max - x_min + self.EPSILON)) - 1
         return x_normalized
 
-    def _process_quantum_incomplete(self, quantum_outputs: torch.Tensor, x: torch.Tensor, h_out: int,
-                                    w_out: int) -> torch.Tensor:
+    def _process_quantum_incomplete(
+        self, quantum_outputs: torch.Tensor, x: torch.Tensor, h_out: int, w_out: int
+    ) -> torch.Tensor:
         """Process incomplete quantum outputs.
-        
+
         Args:
             quantum_outputs (torch.Tensor): Raw quantum measurements
             x (torch.Tensor): Original input tensor
             h_out (int): Target output height
             w_out (int): Target output width
-            
+
         Returns:
             torch.Tensor: Processed quantum output tensor
         """
@@ -391,7 +433,7 @@ class Quanv2d(_QuanvNd):
             output_size=(h_in, w_in),
             kernel_size=self.kernel_size,
             stride=self.stride,
-            padding=self.padding
+            padding=self.padding,
         )
 
         # Apply normalization
@@ -404,22 +446,25 @@ class Quanv2d(_QuanvNd):
 
         return out
 
-    def _process_classical_mode(self, quantum_outputs: torch.Tensor, bs: int, c: int, h_out: int,
-                                w_out: int) -> torch.Tensor:
+    def _process_classical_mode(
+        self, quantum_outputs: torch.Tensor, bs: int, c: int, h_out: int, w_out: int
+    ) -> torch.Tensor:
         """Process quantum outputs in classical mode.
-        
+
         Args:
             quantum_outputs (torch.Tensor): Raw quantum measurements
             bs (int): Batch size
             c (int): Number of channels
             h_out (int): Output height
             w_out (int): Output width
-            
+
         Returns:
             torch.Tensor: Processed classical output
         """
         # Reshape to (B, num_patches, C, K*K)
-        quantum_outputs = quantum_outputs.view(bs, -1, c, self.kernel_size[0] * self.kernel_size[1])
+        quantum_outputs = quantum_outputs.view(
+            bs, -1, c, self.kernel_size[0] * self.kernel_size[1]
+        )
 
         # Aggregate based on selected method
         if self.aggregation_method == AggregationMethod.MEAN:
@@ -428,8 +473,10 @@ class Quanv2d(_QuanvNd):
             out = quantum_outputs.sum(dim=-1)  # (B, num_patches, C)
         elif self.aggregation_method == AggregationMethod.WEIGHTED:
             # weights shape: (C, K*K) -> (1, 1, C, K*K)
-            weights = self.aggregation_weights.unsqueeze(0).unsqueeze(0)  # (1, 1, C, K*K)
-            # Each channel's K*K output is multiplied by the corresponding weight vector and summed
+            weights = self.aggregation_weights.unsqueeze(0).unsqueeze(
+                0
+            )  # (1, 1, C, K*K)
+            # Each channel's K*K output is multiplied by the corresponding weight vector
             out = (quantum_outputs * weights).sum(dim=-1)  # (B, num_patches, C)
         else:
             raise ValueError(f"Unknown aggregation method: {self.aggregation_method}")
@@ -440,22 +487,29 @@ class Quanv2d(_QuanvNd):
             output_size=(h_out, w_out),
             kernel_size=1,  # Use 1x1 conv to aggregate as we already did the aggregation
             stride=1,
-            padding=0
+            padding=0,
         )  # (B, C, h_out, w_out)
 
     def _compute_normalization_factor(self, x: torch.Tensor) -> torch.Tensor:
         """Compute normalization factor for the output.
-        
+
         Args:
             x (torch.Tensor): Input tensor
-            
+
         Returns:
             torch.Tensor: Normalization factor
         """
         ones = torch.ones_like(x)
-        unfolded = F.unfold(ones, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding)
-        folded = F.fold(unfolded, output_size=x.shape[2:], kernel_size=self.kernel_size, stride=self.stride,
-                        padding=self.padding)
+        unfolded = F.unfold(
+            ones, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding
+        )
+        folded = F.fold(
+            unfolded,
+            output_size=x.shape[2:],
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+        )
         return folded
 
 
@@ -464,13 +518,13 @@ class Quanv3d(_QuanvNd):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Initialize classical convolution layer for 3D  
+        # Initialize classical convolution layer for 3D
         self.classical_conv = nn.Conv3d(
             in_channels=self.in_channels,
             out_channels=self.out_channels,
             kernel_size=1,
             stride=1,
-            padding=0
+            padding=0,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -481,10 +535,20 @@ class Quanv3d(_QuanvNd):
     def _validate_input(self, x: torch.Tensor) -> None:
         """Check if input dimensions are as expected for 3D"""
         if x.dim() != 5:
-            raise ValueError(f"Expected 5D input tensor for 3D convolution, got {x.dim()}D")
+            raise ValueError(
+                f"Expected 5D input tensor for 3D convolution, got {x.dim()}D"
+            )
         if x.size(1) != self.in_channels:
             raise ValueError(f"Expected {self.in_channels} channels, got {x.size(1)}")
 
     def _quantum_conv(self, x: torch.Tensor) -> torch.Tensor:
-        """Implement the 3D quantum convolution operation"""
-        pass
+        """Implement the 3D quantum convolution operation.
+
+        Args:
+            x: Input tensor
+
+        Returns:
+            Processed tensor after quantum convolution
+        """
+        # TODO: Implement 3D quantum convolution
+        raise NotImplementedError("3D quantum convolution not yet implemented")

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from components.quanv import Quanv2d, OutputMode, AggregationMethod
+from components.quanv import AggregationMethod, OutputMode, Quanv2d
 
 
 def basic_quanv2d_example():
@@ -76,18 +76,15 @@ def weighted_aggregation_example():
 
 def hybrid_cnn_example():
     """
-    Example of creating a hybrid CNN model, combining quantum convolution and classical convolution
+    Example of creating a hybrid CNN model, combining quantum convolution
+    and classical convolution
     """
 
     class HybridCNN(nn.Module):
         def __init__(self):
             super().__init__()
             self.quanv = Quanv2d(
-                in_channels=3,
-                out_channels=8,
-                kernel_size=2,
-                stride=1,
-                padding=1
+                in_channels=3, out_channels=8, kernel_size=2, stride=1, padding=1
             )
             self.conv = nn.Conv2d(8, 16, kernel_size=3, padding=1)
             self.pool = nn.MaxPool2d(2)

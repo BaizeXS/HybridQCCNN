@@ -11,19 +11,14 @@ Example:
 """
 
 from .qkernel import QKernel
-from .quanv import Quanv2d, OutputMode, AggregationMethod
+from .quanv import AggregationMethod, OutputMode, Quanv2d
 
-__all__ = [
-    'QKernel',
-    'Quanv2d',
-    'OutputMode',
-    'AggregationMethod'
-]
+__all__ = ["QKernel", "Quanv2d", "OutputMode", "AggregationMethod"]
 
 # Version of the components package
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
 # Package metadata
-__author__ = 'BaizeXS'
-__email__ = 'baizexs@gmail.com'
-__description__ = 'Quantum components for hybrid neural networks'
+__author__ = "BaizeXS"
+__email__ = "baizexs@gmail.com"
+__description__ = "Quantum components for hybrid neural networks"
