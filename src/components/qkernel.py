@@ -25,7 +25,7 @@ class QKernel:
     - Applies parameterized quantum operations
     - Measures quantum states to produce classical output
 
-    The kernel structure consists of:
+    The default kernel structure consists of:
     1. Encoding Layer: H + RY(input) gates
     2. Parametric Layer: CRZ + RY(param) gates
     3. Measurement Layer: PauliZ measurements
