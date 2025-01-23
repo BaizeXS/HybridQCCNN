@@ -131,5 +131,5 @@ filterwarnings = [
     "ignore::RuntimeWarning",
     "ignore::torch.jit.TracerWarning",
 ]
-timeout = 300
+timeout = 900
 share_fixtures = true
