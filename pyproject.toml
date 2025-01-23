@@ -75,7 +75,23 @@ all-dev = [
 
 # Tool Configurations
 [tool.setuptools]
-packages = ["src"]
+package-dir = {"" = "src"}
+packages = [
+    "components",
+    "components.qkernel",
+    "components.quanv",
+    "config",
+    "models",
+    "models.benchmark",
+    "models.googlenet",
+    "models.resnet",
+    "models.vgg",
+    "utils",
+    "utils.data_management",
+    "utils.model_management",
+    "utils.training",
+    "utils.visualization"
+]
 
 [tool.black]
 line-length = 88
