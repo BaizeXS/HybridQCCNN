@@ -2,48 +2,81 @@
 
 # Build System
 [build-system]
-requires = ["setuptools>=45", "wheel"]
+requires = ["setuptools>=75.8.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-# Project Information
+# Project Basic Information
 [project]
-name = "hybrid-qccnn"
+name = "hybridqccnn"
 version = "0.1.0"
 description = "A hybrid quantum-classical convolutional neural network implementation."
 readme = "README.md"
+requires-python = ">=3.10"
 authors = [
     {name = "BaizeXS", email = "baizexs@gmail.com"},
 ]
 keywords = ["quantum", "cnn", "deep-learning"]
 
-# Python Version Requirements
-requires-python = ">=3.10"
-
-# Dependencies
+# Core Dependencies
 dependencies = [
-    "torch",
-    "pennylane",
-    "numpy"
-]
-
-# Optional Dependencies
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-cov",
-    "pre-commit",
-    "black",
-    "isort",
-    "flake8",
-    "flake8-bugbear",
-    "flake8-pyproject"
+    "pennylane~=0.40.0",
+    "torch~=2.5.1",
+    "torchvision~=0.20.1",
+    "numpy~=2.0.2",
+    "pandas~=2.2.3",
+    "scikit-learn~=1.6.0",
+    "matplotlib~=3.10.0",
+    "qutip~=5.1.1",
+    "seaborn>=0.13.2",
+    "pillow>=11.1.0",
+    "tensorboard>=2.18.0",
+    "tqdm>=4.67.1",
+    "setuptools>=75.8.0",
 ]
 
 # Project URLs
 [project.urls]
 Homepage = "https://github.com/BaizeXS/HybridQCCNN"
 
-# Formatting
+# Optional Dependencies
+[project.optional-dependencies]
+backend = [
+    "flask~=3.1.0",
+    "flask-cors~=5.0.0",
+]
+test = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.0",
+    "pytest-timeout>=2.3.0",
+]
+dev = [
+    "pre-commit>=4.1.0",
+    "black>=24.10.0",
+    "isort>=5.13.2",
+    "flake8>=7.1.1",
+    "flake8-bugbear>=24.12.12",
+    "flake8-pyproject>=1.2.0",
+]
+all-dev = [
+    "flask~=3.1.0",
+    "flask-cors~=5.0.0",
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.0",
+    "pytest-timeout>=2.3.0",
+    "pre-commit>=4.1.0",
+    "black>=24.10.0",
+    "isort>=5.13.2",
+    "flake8>=7.1.1",
+    "flake8-bugbear>=24.12.12",
+    "flake8-pyproject>=1.2.0",
+]
+
+# Tool Configurations
+[tool.setuptools]
+packages = ["src"]
+
 [tool.black]
 line-length = 88
 target-version = ["py311"]
@@ -58,7 +91,6 @@ exclude = '''
 )/
 '''
 
-# Sorting
 [tool.isort]
 profile = "black"
 multi_line_output = 3
@@ -68,11 +100,37 @@ use_parentheses = true
 ensure_newline_before_comments = true
 line_length = 88
 
-# Linting
 [tool.flake8]
 max-line-length = 88
 max-blank-lines = 2
 extend-select = ["B950"]
 extend-ignore = ["E203", "E501", "E701"]
-
 docstring-convention = "google"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "-n=auto",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: marks tests that need GPU",
+    "quantum: marks tests that use quantum simulators",
+    "integration: marks integration tests",
+    "unit: marks unit tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+    "ignore::RuntimeWarning",
+    "ignore::pennylane.QuantumFunctionError",
+    "ignore::torch.jit.TracerWarning",
+]
+timeout = 300
+share_fixtures = true
