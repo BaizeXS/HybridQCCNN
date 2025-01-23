@@ -123,11 +123,12 @@ class _QuanvNd(nn.Module):
         )
 
         # Classical convolution parameters
+        n = len(kernel_size) if isinstance(kernel_size, tuple) else 2
         self.in_channels = in_channels
         self.out_channels = out_channels
-        self.kernel_size = self._to_tuple(kernel_size, n=2)
-        self.stride = self._to_tuple(stride, n=2)
-        self.padding = self._to_tuple(padding, n=2)
+        self.kernel_size = self._to_tuple(kernel_size, n)
+        self.stride = self._to_tuple(stride, n)
+        self.padding = self._to_tuple(padding, n)
         self.device = device
 
         # Output mode and aggregation method configuration
@@ -144,9 +145,6 @@ class _QuanvNd(nn.Module):
 
         # Initialize aggregation weights if needed
         self._setup_aggregation_weights()
-
-        # Used to store the last input
-        self.last_input = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Abstract forward method - to be implemented by subclasses"""
@@ -176,34 +174,52 @@ class _QuanvNd(nn.Module):
             raise ValueError("out_channels must be positive")
 
         # Validate kernel_size
-        if isinstance(kwargs["kernel_size"], int):
-            if kwargs["kernel_size"] <= 0:
-                raise ValueError("kernel_size must be positive")
-        elif isinstance(kwargs["kernel_size"], tuple):
-            if any(not isinstance(k, int) or k <= 0 for k in kwargs["kernel_size"]):
-                raise ValueError("kernel_size must be positive")
-        else:
-            raise ValueError("kernel_size must be an integer or tuple")
+        if not (
+            isinstance(kwargs["kernel_size"], (int, tuple))
+            and all(
+                isinstance(x, int) and x > 0
+                for x in (
+                    (kwargs["kernel_size"],)
+                    if isinstance(kwargs["kernel_size"], int)
+                    else kwargs["kernel_size"]
+                )
+            )
+        ):
+            raise ValueError(
+                "kernel_size must be a positive integer or tuple of positive integers"
+            )
 
         # Validate stride
-        if isinstance(kwargs["stride"], int):
-            if kwargs["stride"] <= 0:
-                raise ValueError("stride must be positive")
-        elif isinstance(kwargs["stride"], tuple):
-            if any(not isinstance(s, int) or s <= 0 for s in kwargs["stride"]):
-                raise ValueError("stride must be positive")
-        else:
-            raise ValueError("stride must be an integer or tuple")
+        if not (
+            isinstance(kwargs["stride"], (int, tuple))
+            and all(
+                isinstance(x, int) and x > 0
+                for x in (
+                    (kwargs["stride"],)
+                    if isinstance(kwargs["stride"], int)
+                    else kwargs["stride"]
+                )
+            )
+        ):
+            raise ValueError(
+                "stride must be a positive integer or tuple of positive integers"
+            )
 
         # Validate padding
-        if isinstance(kwargs["padding"], int):
-            if kwargs["padding"] < 0:
-                raise ValueError("padding cannot be negative")
-        elif isinstance(kwargs["padding"], tuple):
-            if any(not isinstance(p, int) or p < 0 for p in kwargs["padding"]):
-                raise ValueError("padding cannot be negative")
-        else:
-            raise ValueError("padding must be an integer or tuple")
+        if not (
+            isinstance(kwargs["padding"], (int, tuple))
+            and all(
+                isinstance(x, int) and x >= 0
+                for x in (
+                    (kwargs["padding"],)
+                    if isinstance(kwargs["padding"], int)
+                    else kwargs["padding"]
+                )
+            )
+        ):
+            raise ValueError(
+                "padding must be a non-negative integer or tuple of non-negative integers"
+            )
 
     def _validate_input(self, x: torch.Tensor) -> None:
         """Validate input tensor; this will be implemented in subclasses"""
