@@ -1,0 +1,24 @@
+# Basic Dependencies
+pennylane~=0.39.0
+torch>=2.5.1
+torchvision~=0.20.1
+numpy~=2.0.2
+pandas>=2.2.3
+scikit-learn~=1.6.0
+matplotlib~=3.10.0
+seaborn~=0.13.2
+qutip~=5.1.0
+pillow~=11.0.0
+tqdm~=4.67.1
+flask~=3.1.0
+setuptools~=75.6.0
+# Testing
+pytest>=8.3.4
+pytest-cov>=4.1.0
+# Code Quality
+pre-commit>=4.1.1
+black>=24.10.1
+isort>=5.13.3
+flake8>=7.1.2
+flake8-bugbear>=2.1.0
+flake8-pyproject>=1.2.0

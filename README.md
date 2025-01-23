@@ -36,7 +36,7 @@ conda create -n qml python=3.10
 
 Activate the environment
 
-```shell 
+```shell
 conda activate qml
 ```
 
@@ -249,3 +249,28 @@ python -m utils.model_test --model HybridResNet --dataset GarbageDataset --data-
 
 
 
+
+
+
+
+```python
+# x is the documents
+digest = hash(x)
+signature = encrypt(private_key, digest)
+message = x + signature
+
+
+#  on the way
+# A -----message------> B
+
+
+# received the message
+x, signature = message
+validation_digest = hash(x)
+groundtruth_digest = decrypt(public_key, signature)
+# to verify
+if validation_digest == groundtruth_digest:
+	print("No modification")
+else:
+	print("Something is wrong")
+```
