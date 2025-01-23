@@ -1,23 +1,24 @@
 # Basic Dependencies
 pennylane~=0.40.0
-torch>=2.5.1
-torchvision>=0.20.1
-numpy>=2.0.2
-pandas>=2.2.3
+torch~=2.5.1
+torchvision~=0.20.1
+numpy~=2.0.2
+pandas~=2.2.3
 scikit-learn~=1.6.0
 matplotlib~=3.10.0
-seaborn~=0.13.2
-qutip~=5.1.0
-pillow>=11.0.0
+qutip~=5.1.1
+seaborn>=0.13.2
+pillow>=11.1.0
 tensorboard>=2.18.0
 tqdm>=4.67.1
-flask>=3.1.0
-flask-cors>=5.0.0
-setuptools>=75.6.0
-# Testing
+setuptools>=75.8.0
+# Backend Dependencies
+flask~=3.1.0
+flask-cors~=5.0.0
+# Testing Dependencies
 pytest>=8.3.4
 pytest-cov>=6.0.0
-# Code Quality
+# Code Quality Dependencies
 pre-commit>=4.1.0
 black>=24.10.0
 isort>=5.13.2
