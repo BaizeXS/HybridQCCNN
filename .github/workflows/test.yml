@@ -37,7 +37,7 @@ jobs:
 
       - name: Run tests
         run: |
-          PYTHONPATH=$PYTHONPATH:$(pwd)/src pytest \
+          python -m pytest \
             -v \
             --tb=short \
             --cov=src \
