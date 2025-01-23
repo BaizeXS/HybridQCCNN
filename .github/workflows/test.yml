@@ -24,6 +24,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
 
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=${{ github.workspace }}/src" >> $GITHUB_ENV
+
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
 
