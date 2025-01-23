@@ -22,10 +22,10 @@ import importlib.util
 import logging
 import sys
 from pathlib import Path
-from typing import Tuple, List, Dict
+from typing import Dict, List, Tuple
 
 import torch
-from torch.utils.data import Dataset, DataLoader, random_split, Subset
+from torch.utils.data import DataLoader, Dataset, Subset, random_split
 from torchvision import datasets, transforms
 
 from config import DataConfig
@@ -33,24 +33,24 @@ from config import DataConfig
 
 class CustomDataset(Dataset):
     """Base class for custom dataset implementations.
-    
+
     This class provides a template for creating custom datasets compatible with
     PyTorch's Dataset interface. Users should inherit from this class and
     implement the _load_data method according to their specific data format.
-    
+
     The class handles:
     - Basic dataset initialization
     - Data loading interface
     - Data transformation pipeline
     - Standard dataset operations (__len__, __getitem__)
-    
+
     Attributes:
         data_dir (Path): Root directory containing the dataset files
         transform: Transformation pipeline to be applied to data samples
         train (bool): Whether this dataset is for training or testing
         data (list): List containing loaded data samples
         targets (list): List containing corresponding labels/targets
-    
+
     Example:
         class ImageDataset(CustomDataset):
             def _load_data(self):
@@ -62,7 +62,7 @@ class CustomDataset(Dataset):
 
     def __init__(self, data_dir: Path, transform=None, train: bool = True):
         """Initialize the dataset.
-        
+
         Args:
             data_dir (Path): Root directory of the dataset
             transform: Optional transform to be applied to data samples
@@ -78,10 +78,10 @@ class CustomDataset(Dataset):
 
     def _load_data(self):
         """Load data samples and targets.
-        
+
         This method should be implemented by subclasses to load data according
         to their specific format and structure.
-        
+
         Raises:
             NotImplementedError: If the subclass doesn't implement this method
         """
@@ -93,10 +93,10 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         """Get a single data sample and its corresponding target.
-        
+
         Args:
             idx (int): Index of the sample to retrieve
-            
+
         Returns:
             tuple: (transformed_data, target) pair
         """
@@ -111,22 +111,22 @@ class CustomDataset(Dataset):
 
 class DatasetManager:
     """Dataset manager: responsible for dataset loading, preprocessing, and management.
-    
+
     This class provides a unified interface for handling all dataset-related
     operations, including:
     - Dataset loading and validation
     - Data transformation pipeline setup
     - Training/validation set splitting
     - DataLoader configuration and creation
-    
+
     The manager supports both built-in datasets (CIFAR10, MNIST) and custom
     datasets through the CustomDataset interface.
-    
+
     Attributes:
         config (DataConfig): Configuration object containing dataset parameters
         data_dir (Path): Root directory for dataset storage
         logger (logging.Logger): Logger for tracking dataset operations
-    
+
     Example:
         config = DataConfig(
             dataset_type='CIFAR10',
@@ -147,7 +147,7 @@ class DatasetManager:
 
     def _validate_config(self):
         """Validate dataset configuration.
-        
+
         Raises:
             ValueError: If dataset configuration is invalid.
         """
@@ -156,9 +156,10 @@ class DatasetManager:
 
     def get_data_loaders(self) -> Tuple[DataLoader, DataLoader, DataLoader]:
         """Get training, validation, and test data loaders.
-        
+
         Returns:
-            Tuple[DataLoader, DataLoader, DataLoader]: Training, validation, and test data loaders
+            Tuple[DataLoader, DataLoader, DataLoader]: Training, validation,
+            and test data loaders
         """
         # Get data transformations
         train_transform = self._get_transforms(self.config.train_transforms)
@@ -171,8 +172,7 @@ class DatasetManager:
 
         # Split training and validation datasets
         train_dataset, val_dataset = self._split_dataset(
-            train_dataset,
-            self.config.train_split
+            train_dataset, self.config.train_split
         )
 
         # Set validation dataset transformation
@@ -182,35 +182,26 @@ class DatasetManager:
             val_dataset.transform = val_transform
 
         # Create data loaders
-        train_loader = self._create_loader(
-            train_dataset,
-            shuffle=True
-        )
-        val_loader = self._create_loader(
-            val_dataset,
-            shuffle=False
-        )
-        test_loader = self._create_loader(
-            test_dataset,
-            shuffle=False
-        )
+        train_loader = self._create_loader(train_dataset, shuffle=True)
+        val_loader = self._create_loader(val_dataset, shuffle=False)
+        test_loader = self._create_loader(test_dataset, shuffle=False)
 
         return train_loader, val_loader, test_loader
 
     @staticmethod
     def _get_transforms(transform_configs: List[Dict]) -> transforms.Compose:
         """Create data transformations.
-        
+
         Args:
             transform_configs (List[Dict]): List of transformation configurations
-            
+
         Returns:
             transforms.Compose: Composed transformation
         """
         transform_list = []
         for t_config in transform_configs:
-            transform_name = t_config['name']
-            transform_args = t_config.get('args', {})
+            transform_name = t_config["name"]
+            transform_args = t_config.get("args", {})
 
             if hasattr(transforms, transform_name):
                 transform = getattr(transforms, transform_name)(**transform_args)
@@ -222,58 +213,48 @@ class DatasetManager:
 
     def _get_dataset(self, transform, train: bool = True) -> Dataset:
         """Load dataset based on configuration.
-        
+
         Args:
             transform: Data transformation
             train (bool): Whether to load training dataset
-            
+
         Returns:
             Dataset: Loaded dataset
-            
+
         Raises:
             ValueError: If dataset type is unknown or custom dataset configuration is invalid
         """
-        if self.config.dataset_type.upper() == 'CIFAR10':
+        if self.config.dataset_type.upper() == "CIFAR10":
             return datasets.CIFAR10(
-                root=self.data_dir,
-                train=train,
-                download=True,
-                transform=transform
+                root=self.data_dir, train=train, download=True, transform=transform
             )
-        elif self.config.dataset_type.upper() == 'MNIST':
+        elif self.config.dataset_type.upper() == "MNIST":
             return datasets.MNIST(
-                root=self.data_dir,
-                train=train,
-                download=True,
-                transform=transform
+                root=self.data_dir, train=train, download=True, transform=transform
             )
-        elif self.config.dataset_type.upper() == 'FASHIONMNIST':
+        elif self.config.dataset_type.upper() == "FASHIONMNIST":
             return datasets.FashionMNIST(
-                root=self.data_dir,
-                train=train,
-                download=True,
-                transform=transform
+                root=self.data_dir, train=train, download=True, transform=transform
             )
-        elif self.config.dataset_type.upper() == 'CIFAR100':
+        elif self.config.dataset_type.upper() == "CIFAR100":
             return datasets.CIFAR100(
-                root=self.data_dir,
-                train=train,
-                download=True,
-                transform=transform
+                root=self.data_dir, train=train, download=True, transform=transform
             )
-        elif self.config.dataset_type.upper() == 'CUSTOM':
+        elif self.config.dataset_type.upper() == "CUSTOM":
             # Load custom dataset class
             if not self.config.custom_dataset_path:
-                raise ValueError("custom_dataset_path must be provided for custom dataset")
+                raise ValueError(
+                    "custom_dataset_path must be provided for custom dataset"
+                )
 
             # Import custom dataset module
             custom_dataset_path = Path(self.config.custom_dataset_path)
             spec = importlib.util.spec_from_file_location(
                 custom_dataset_path.stem, custom_dataset_path
             )
-            module = importlib.util.module_from_spec(spec)
+            module = importlib.util.module_from_spec(spec)  # type: ignore
             sys.modules[custom_dataset_path.stem] = module
-            spec.loader.exec_module(module)
+            spec.loader.exec_module(module)  # type: ignore
 
             # Get dataset class
             dataset_class = getattr(module, self.config.name)
@@ -283,22 +264,19 @@ class DatasetManager:
                 data_dir=self.data_dir,
                 transform=transform,
                 train=train,
-                **self.config.dataset_kwargs
+                **self.config.dataset_kwargs,
             )
         else:
             raise ValueError(f"Unknown dataset type: {self.config.dataset_type}")
 
     @staticmethod
-    def _split_dataset(
-            dataset: Dataset,
-            split_ratio: float
-    ) -> Tuple[Subset, Subset]:
+    def _split_dataset(dataset: Dataset, split_ratio: float) -> Tuple[Subset, Subset]:
         """Split dataset into training and validation sets.
-        
+
         Args:
             dataset (Dataset): Dataset to split
             split_ratio (float): Train/val split ratio
-            
+
         Returns:
             Tuple[Dataset, Dataset]: Training and validation datasets
         """
@@ -309,24 +287,18 @@ class DatasetManager:
         val_size = len(dataset) - train_size  # type: ignore[arg-type]
 
         train_subset, val_subset = random_split(
-            dataset,
-            [train_size, val_size],
-            generator=torch.Generator().manual_seed(42)
+            dataset, [train_size, val_size], generator=torch.Generator().manual_seed(42)
         )
 
         return train_subset, val_subset
 
-    def _create_loader(
-            self,
-            dataset: Dataset,
-            shuffle: bool = False
-    ) -> DataLoader:
+    def _create_loader(self, dataset: Dataset, shuffle: bool = False) -> DataLoader:
         """Create data loader.
-        
+
         Args:
             dataset (Dataset): Dataset to load
             shuffle (bool): Whether to shuffle data
-            
+
         Returns:
             DataLoader: Data loader
         """
@@ -335,5 +307,5 @@ class DatasetManager:
             batch_size=self.config.batch_size,
             shuffle=shuffle,
             num_workers=self.config.num_workers,
-            pin_memory=self.config.pin_memory
+            pin_memory=self.config.pin_memory,
         )

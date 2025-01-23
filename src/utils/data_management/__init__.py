@@ -11,9 +11,6 @@ Main components:
 - DatasetManager: Central manager for dataset operations
 """
 
-from .dataset_manager import DatasetManager, CustomDataset
+from .dataset_manager import CustomDataset, DatasetManager
 
-__all__ = [
-    'DatasetManager',
-    'CustomDataset'
-]
+__all__ = ["DatasetManager", "CustomDataset"]

@@ -10,8 +10,4 @@ from .metrics_plot import MetricsPlotter
 from .model_plot import ModelPlotter
 from .quantum_plot import QuantumPlotter
 
-__all__ = [
-    'MetricsPlotter',
-    'QuantumPlotter',
-    'ModelPlotter'
-]
+__all__ = ["MetricsPlotter", "QuantumPlotter", "ModelPlotter"]

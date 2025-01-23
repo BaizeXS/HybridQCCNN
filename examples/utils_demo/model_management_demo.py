@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from config import Config, ModelConfig, DataConfig, TrainingConfig
+from config import Config, DataConfig, ModelConfig, TrainingConfig
 from utils.model_management import ModelManager
 
 
@@ -16,36 +16,34 @@ def basic_model_example():
         name="MNIST",
         input_shape=(1, 28, 28),
         num_classes=10,
-        dataset_type='MNIST',
+        dataset_type="MNIST",
         batch_size=32,
         train_split=0.8,
         num_workers=2,
         pin_memory=True,
         train_transforms=[
-            {'name': 'ToTensor'},
-            {'name': 'Normalize', 'args': {'mean': [0.1307], 'std': [0.3081]}}
+            {"name": "ToTensor"},
+            {"name": "Normalize", "args": {"mean": [0.1307], "std": [0.3081]}},
         ],
         val_transforms=[
-            {'name': 'ToTensor'},
-            {'name': 'Normalize', 'args': {'mean': [0.1307], 'std': [0.3081]}}
+            {"name": "ToTensor"},
+            {"name": "Normalize", "args": {"mean": [0.1307], "std": [0.3081]}},
         ],
         test_transforms=[
-            {'name': 'ToTensor'},
-            {'name': 'Normalize', 'args': {'mean': [0.1307], 'std': [0.3081]}}
+            {"name": "ToTensor"},
+            {"name": "Normalize", "args": {"mean": [0.1307], "std": [0.3081]}},
         ],
     )
 
     model_config = ModelConfig(
-        name="ClassicNet",
-        model_type="classic",
-        model_kwargs={"num_classes": 10}
+        name="ClassicNet", model_type="classic", model_kwargs={"num_classes": 10}
     )
 
     training_config = TrainingConfig(
         learning_rate=0.001,
         num_epochs=10,
         scheduler_type="StepLR",
-        scheduler_kwargs={"step_size": 30, "gamma": 0.1}
+        scheduler_kwargs={"step_size": 30, "gamma": 0.1},
     )
 
     config = Config(
@@ -55,7 +53,7 @@ def basic_model_example():
         data=data_config,
         model=model_config,
         training=training_config,
-        device="cuda" if torch.cuda.is_available() else "cpu"
+        device="cuda" if torch.cuda.is_available() else "cpu",
     )
 
     # Create model manager
@@ -66,15 +64,14 @@ def basic_model_example():
     train_labels = torch.randint(0, 10, (100,))
     train_dataset = torch.utils.data.TensorDataset(train_data, train_labels)
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=config.data.batch_size
+        train_dataset, batch_size=config.data.batch_size
     )
 
     # Train model
     manager.train(train_loader, val_loader=None)
 
     print("\nTraining metrics (last 5 epochs):")
-    for metric, values in manager.metrics['train'].items():
+    for metric, values in manager.metrics["train"].items():
         # Format last 5 values, handle numpy arrays
         last_values = values[-5:]
         formatted_values = [
@@ -117,7 +114,7 @@ class CustomNet(nn.Module):
             nn.Dropout(0.5),
             nn.Linear(hidden_dim, num_classes)
         )
-        
+
     def forward(self, x):
         x = self.features(x)
         x = x.view(x.size(0), -1)
@@ -134,29 +131,23 @@ class CustomNet(nn.Module):
             name="MNIST",
             input_shape=(1, 28, 28),
             num_classes=10,
-            dataset_type='MNIST',
+            dataset_type="MNIST",
             batch_size=32,
             train_split=0.8,
             num_workers=2,
             pin_memory=True,
-            train_transforms=[{'name': 'ToTensor'}],
-            val_transforms=[{'name': 'ToTensor'}],
-            test_transforms=[{'name': 'ToTensor'}],
+            train_transforms=[{"name": "ToTensor"}],
+            val_transforms=[{"name": "ToTensor"}],
+            test_transforms=[{"name": "ToTensor"}],
         ),
         model=ModelConfig(
             name="CustomNet",
             model_type="custom",
-            model_kwargs={
-                "num_classes": 10,
-                "hidden_dim": 256
-            },
-            custom_model_path=model_file
+            model_kwargs={"num_classes": 10, "hidden_dim": 256},
+            custom_model_path=model_file,
         ),
-        training=TrainingConfig(
-            learning_rate=0.001,
-            num_epochs=5
-        ),
-        device="cuda" if torch.cuda.is_available() else "cpu"
+        training=TrainingConfig(learning_rate=0.001, num_epochs=5),
+        device="cuda" if torch.cuda.is_available() else "cpu",
     )
 
     # Create model manager with custom model
@@ -167,8 +158,7 @@ class CustomNet(nn.Module):
     train_labels = torch.randint(0, 10, (100,))
     train_dataset = torch.utils.data.TensorDataset(train_data, train_labels)
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=config.data.batch_size
+        train_dataset, batch_size=config.data.batch_size
     )
 
     # Train and validate
@@ -176,19 +166,22 @@ class CustomNet(nn.Module):
     val_labels = torch.randint(0, 10, (50,))
     val_dataset = torch.utils.data.TensorDataset(val_data, val_labels)
     val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=config.data.batch_size
+        val_dataset, batch_size=config.data.batch_size
     )
 
     # Train model
     manager.train(train_loader, val_loader=val_loader)
 
     print("\nTraining metrics (last epoch):")
-    for phase in ['train', 'val']:
+    for phase in ["train", "val"]:
         print(f"\n{phase.capitalize()} phase:")
         for metric, values in manager.metrics[phase].items():
             # Format last value, handle numpy arrays
-            value = float(values[-1]) if isinstance(values[-1], (np.floating, np.integer)) else values[-1]
+            value = (
+                float(values[-1])
+                if isinstance(values[-1], (np.floating, np.integer))
+                else values[-1]
+            )
             print(f"{metric}: {value:.4f}")
 
     # Clean up
@@ -208,23 +201,19 @@ def checkpoint_management_example():
             name="MNIST",
             input_shape=(1, 28, 28),
             num_classes=10,
-            dataset_type='MNIST',
+            dataset_type="MNIST",
             batch_size=32,
             train_split=0.8,
             num_workers=2,
             pin_memory=True,
-            train_transforms=[{'name': 'ToTensor'}],
-            val_transforms=[{'name': 'ToTensor'}],
-            test_transforms=[{'name': 'ToTensor'}],
+            train_transforms=[{"name": "ToTensor"}],
+            val_transforms=[{"name": "ToTensor"}],
+            test_transforms=[{"name": "ToTensor"}],
         ),
         model=ModelConfig(
-            name="ClassicNet",
-            model_type="classic",
-            model_kwargs={"num_classes": 10}
+            name="ClassicNet", model_type="classic", model_kwargs={"num_classes": 10}
         ),
-        training=TrainingConfig(
-            checkpoint_interval=1
-        )
+        training=TrainingConfig(checkpoint_interval=1),
     )
 
     # Create two model managers
@@ -236,8 +225,7 @@ def checkpoint_management_example():
     train_labels = torch.randint(0, 10, (100,))
     train_dataset = torch.utils.data.TensorDataset(train_data, train_labels)
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=config.data.batch_size
+        train_dataset, batch_size=config.data.batch_size
     )
 
     # Train both models
@@ -255,8 +243,9 @@ def checkpoint_management_example():
 
     # Verify models have same weights
     print("\nVerifying model weights...")
-    for (n1, p1), (n2, p2) in zip(manager1.model.named_parameters(),
-                                  manager2.model.named_parameters()):
+    for (n1, p1), (_, p2) in zip(
+        manager1.model.named_parameters(), manager2.model.named_parameters()
+    ):
         if not torch.allclose(p1, p2):
             print(f"Warning: Parameters {n1} don't match!")
             break

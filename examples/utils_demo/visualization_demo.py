@@ -3,12 +3,12 @@ from pathlib import Path
 import numpy as np
 import pennylane as qml
 
-from utils.visualization import MetricsPlotter, QuantumPlotter, ModelPlotter
+from utils.visualization import MetricsPlotter, ModelPlotter, QuantumPlotter
 
 
 def metrics_plotter_example(output_dir: Path):
     """Demonstrate MetricsPlotter functionality
-    
+
     Shows how to:
     1. Plot single metric with multiple phases
     2. Plot confusion matrix
@@ -18,44 +18,29 @@ def metrics_plotter_example(output_dir: Path):
 
     # Create example training metrics
     metrics_data = {
-        'train': {
-            'loss': [0.5, 0.4, 0.3, 0.2, 0.1],
-            'accuracy': [0.8, 0.85, 0.9, 0.92, 0.95]
+        "train": {
+            "loss": [0.5, 0.4, 0.3, 0.2, 0.1],
+            "accuracy": [0.8, 0.85, 0.9, 0.92, 0.95],
         },
-        'val': {
-            'loss': [0.55, 0.45, 0.35, 0.25, 0.15],
-            'accuracy': [0.75, 0.8, 0.85, 0.87, 0.9]
-        }
+        "val": {
+            "loss": [0.55, 0.45, 0.35, 0.25, 0.15],
+            "accuracy": [0.75, 0.8, 0.85, 0.87, 0.9],
+        },
     }
 
     # Create example confusion matrix
-    conf_matrix = np.array([
-        [90, 10],
-        [5, 95]
-    ])
+    conf_matrix = np.array([[90, 10], [5, 95]])
 
     # Create example multi-model metrics
     multi_model_metrics = {
-        'model1': {
-            'train': {
-                'loss': [0.5, 0.4, 0.3],
-                'accuracy': [0.8, 0.85, 0.9]
-            },
-            'val': {
-                'loss': [0.55, 0.45, 0.35],
-                'accuracy': [0.75, 0.8, 0.85]
-            }
+        "model1": {
+            "train": {"loss": [0.5, 0.4, 0.3], "accuracy": [0.8, 0.85, 0.9]},
+            "val": {"loss": [0.55, 0.45, 0.35], "accuracy": [0.75, 0.8, 0.85]},
         },
-        'model2': {
-            'train': {
-                'loss': [0.45, 0.35, 0.25],
-                'accuracy': [0.85, 0.9, 0.95]
-            },
-            'val': {
-                'loss': [0.5, 0.4, 0.3],
-                'accuracy': [0.8, 0.85, 0.9]
-            }
-        }
+        "model2": {
+            "train": {"loss": [0.45, 0.35, 0.25], "accuracy": [0.85, 0.9, 0.95]},
+            "val": {"loss": [0.5, 0.4, 0.3], "accuracy": [0.8, 0.85, 0.9]},
+        },
     }
 
     # Create MetricsPlotter instance
@@ -64,34 +49,34 @@ def metrics_plotter_example(output_dir: Path):
     # 1. Plot single metric
     plotter.plot_single_metric(
         data=metrics_data,
-        metric_name='loss',
-        title='Training and Validation Loss',
-        save_path=output_dir / 'single_metric.png',
-        show=True
+        metric_name="loss",
+        title="Training and Validation Loss",
+        save_path=output_dir / "single_metric.png",
+        show=True,
     )
 
     # 2. Plot confusion matrix
     plotter.plot_confusion_matrix(
         conf_matrix=conf_matrix,
-        classes=['Class 0', 'Class 1'],
-        save_path=output_dir / 'confusion_matrix.png',
-        show=True
+        classes=["Class 0", "Class 1"],
+        save_path=output_dir / "confusion_matrix.png",
+        show=True,
     )
 
     # 3. Plot metrics comparison
     plotter.plot_metrics_comparison(
-        data=multi_model_metrics,
-        metric_names=['loss', 'accuracy'],
-        model_names=['model1', 'model2'],
-        phases=['train', 'val'],
-        save_dir=output_dir / 'comparison',
-        show=True
+        data=multi_model_metrics,  # type: ignore
+        metric_names=["loss", "accuracy"],
+        model_names=["model1", "model2"],
+        phases=["train", "val"],
+        save_dir=output_dir / "comparison",
+        show=True,
     )
 
 
 def quantum_plotter_example(output_dir: Path):
     """Demonstrate QuantumPlotter functionality
-    
+
     Shows how to:
     1. Plot quantum state on Bloch sphere
     2. Plot quantum circuit diagram
@@ -102,7 +87,7 @@ def quantum_plotter_example(output_dir: Path):
     state = np.array([0, 0, 1])
 
     # Create simple quantum circuit
-    dev = qml.device('default.qubit', wires=2)
+    dev = qml.device("default.qubit", wires=2)
 
     @qml.qnode(dev)
     def quantum_circuit(x, weights):
@@ -116,9 +101,7 @@ def quantum_plotter_example(output_dir: Path):
 
     # 1. Plot quantum state
     plotter.plot_quantum_state(
-        state=state,
-        save_path=output_dir / 'quantum_state.png',
-        show=True
+        state=state, save_path=output_dir / "quantum_state.png", show=True
     )
 
     # 2. Plot quantum circuit
@@ -126,14 +109,14 @@ def quantum_plotter_example(output_dir: Path):
         qnode=quantum_circuit,
         inputs=np.array([0.5, 0.1]),
         weights=None,
-        save_path=output_dir / 'quantum_circuit.png',
-        show=True
+        save_path=output_dir / "quantum_circuit.png",
+        show=True,
     )
 
 
 def model_plotter_example(output_dir: Path):
     """Demonstrate ModelPlotter functionality
-    
+
     Shows how to:
     1. Plot different activation functions
     2. Plot with different input ranges
@@ -148,10 +131,7 @@ def model_plotter_example(output_dir: Path):
         return np.maximum(0, x)
 
     plotter.plot_activation_function(
-        func=relu,
-        name='ReLU',
-        save_path=output_dir / 'relu.png',
-        show=True
+        func=relu, name="ReLU", save_path=output_dir / "relu.png", show=True
     )
 
     # 2. Plot Sigmoid activation with different ranges
@@ -161,10 +141,10 @@ def model_plotter_example(output_dir: Path):
     for x_range in [(-5, 5), (-10, 10), (0, 1)]:
         plotter.plot_activation_function(
             func=sigmoid,
-            name=f'Sigmoid (range: {x_range})',
+            name=f"Sigmoid (range: {x_range})",
             x_range=x_range,
-            save_path=output_dir / f'sigmoid_range_{x_range[0]}_{x_range[1]}.png',
-            show=True
+            save_path=output_dir / f"sigmoid_range_{x_range[0]}_{x_range[1]}.png",
+            show=True,
         )
 
 

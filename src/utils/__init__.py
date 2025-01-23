@@ -20,34 +20,38 @@ Example:
     >>> plotter = MetricsPlotter()
 """
 
-from .data_management import DatasetManager, CustomDataset
-from .model_management import ModelManager
-from .training import Trainer, MetricsCalculator
-from .visualization import MetricsPlotter, QuantumPlotter, ModelPlotter
+import logging
+from typing import List
+
+from .data_management import CustomDataset, DatasetManager  # noqa: F401
+from .model_management import ModelManager  # noqa: F401
+from .training import MetricsCalculator, Trainer  # noqa: F401
+from .visualization import MetricsPlotter, ModelPlotter, QuantumPlotter  # noqa: F401
 
 # Model Management
-__model_management__ = ['ModelManager']
+__model_management__: List[str] = ["ModelManager"]
 
 # Data Management
-__data_management__ = ['DatasetManager', 'CustomDataset']
+__data_management__: List[str] = ["DatasetManager", "CustomDataset"]
 
 # Training
-__training__ = ['Trainer', 'MetricsCalculator']
+__training__: List[str] = ["Trainer", "MetricsCalculator"]
 
 # Visualization
-__visualization__ = ['MetricsPlotter', 'QuantumPlotter', 'ModelPlotter']
+__visualization__: List[str] = ["MetricsPlotter", "QuantumPlotter", "ModelPlotter"]
 
-__all__ = (
-        __model_management__ +
-        __data_management__ +
-        __training__ +
-        __visualization__
-)
+__all__ = __model_management__ + __data_management__ + __training__ + __visualization__
 
 # Version of the utils package
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
 # Package metadata
-__author__ = 'BaizeXS'
-__email__ = 'baizexs@gmail.com'
-__description__ = 'Utilities for quantum-classical hybrid model management, training, and visualization'
+__author__ = "BaizeXS"
+__email__ = "baizexs@gmail.com"
+__description__ = (
+    "Utilities for quantum-classical hybrid model management, "
+    "training, and visualization"
+)
+
+# Add a null handler to the logger
+logging.getLogger(__name__).addHandler(logging.NullHandler())

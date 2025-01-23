@@ -8,7 +8,4 @@ This module provides:
 from .metrics import MetricsCalculator
 from .trainer import Trainer
 
-__all__ = [
-    'Trainer',
-    'MetricsCalculator'
-]
+__all__ = ["Trainer", "MetricsCalculator"]

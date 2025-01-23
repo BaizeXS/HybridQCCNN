@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
-from utils.training import Trainer, MetricsCalculator
+from utils.training import MetricsCalculator, Trainer
 
 
 def basic_training_example():
@@ -10,11 +10,7 @@ def basic_training_example():
     Basic training example
     """
     # Create a simple model
-    model = nn.Sequential(
-        nn.Linear(10, 5),
-        nn.ReLU(),
-        nn.Linear(5, 2)
-    )
+    model = nn.Sequential(nn.Linear(10, 5), nn.ReLU(), nn.Linear(5, 2))
 
     # Create example data
     x = torch.randn(100, 10)
@@ -33,10 +29,7 @@ def basic_training_example():
 
     # Initialize trainer
     trainer = Trainer(
-        model=model,
-        criterion=criterion,
-        optimizer=optimizer,
-        device=device
+        model=model, criterion=criterion, optimizer=optimizer, device=device  # type: ignore
     )
 
     # Train for one epoch
@@ -53,11 +46,7 @@ def training_with_scheduler_example():
     """
     Example of training with learning rate scheduler
     """
-    model = nn.Sequential(
-        nn.Linear(10, 5),
-        nn.ReLU(),
-        nn.Linear(5, 3)
-    )
+    model = nn.Sequential(nn.Linear(10, 5), nn.ReLU(), nn.Linear(5, 3))
 
     # Create example data
     x = torch.randn(100, 10)
@@ -71,21 +60,24 @@ def training_with_scheduler_example():
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
     trainer = Trainer(
-        model=model,
-        criterion=criterion,
-        optimizer=optimizer,
-        scheduler=scheduler
+        model=model, criterion=criterion, optimizer=optimizer, scheduler=scheduler  # type: ignore
     )
 
     # Train and validate
     print("Training metrics:")
     train_metrics, _ = trainer.train_epoch(train_loader, epoch=1)
-    print(f"Training - Loss: {train_metrics['loss']:.4f}, Accuracy: {train_metrics['accuracy']:.4f}")
+    print(
+        "Training - "
+        f"Loss: {train_metrics['loss']:.4f}, "
+        f"Accuracy: {train_metrics['accuracy']:.4f}"
+    )
     print(f"Training time: {train_metrics['epoch_time']:.3f}s")
 
     print("\nValidation metrics:")
     val_metrics, _ = trainer.validate(val_loader)
-    print(f"Validation - Loss: {val_metrics['loss']:.4f}, Accuracy: {val_metrics['accuracy']:.4f}")
+    print(
+        f"Validation - Loss: {val_metrics['loss']:.4f}, Accuracy: {val_metrics['accuracy']:.4f}"
+    )
     print(f"Validation time: {val_metrics['phase_time']:.3f}s")
 
     # Clean up
@@ -99,12 +91,7 @@ def metrics_calculation_example():
     calculator = MetricsCalculator()
 
     # Create example predictions and targets
-    outputs = torch.tensor([
-        [0.1, 0.9],
-        [0.8, 0.2],
-        [0.3, 0.7],
-        [0.9, 0.1]
-    ])
+    outputs = torch.tensor([[0.1, 0.9], [0.8, 0.2], [0.3, 0.7], [0.9, 0.1]])
     targets = torch.tensor([1, 0, 1, 0])
     loss = torch.tensor(0.5)
 
