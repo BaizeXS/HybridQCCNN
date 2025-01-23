@@ -129,7 +129,6 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::UserWarning",
     "ignore::RuntimeWarning",
-    "ignore::pennylane.QuantumFunctionError",
     "ignore::torch.jit.TracerWarning",
 ]
 timeout = 300

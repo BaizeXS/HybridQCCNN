@@ -70,7 +70,10 @@ def test_custom_circuit():
             "quantum_channels": 0,
             "error_match": "quantum_channels must be a positive integer",
         },
-        {"kernel_size": 0, "error_match": "kernel_size must be a positive integer"},
+        {
+            "kernel_size": 0,
+            "error_match": "kernel_size must be a positive integer",
+        },
         {
             "num_param_blocks": 0,
             "error_match": "num_param_blocks must be a positive integer",
