@@ -532,7 +532,3 @@ logs/*
 
 # Outputs
 outputs/*
-
-# Tensorboard
-tensorboard/*
-
