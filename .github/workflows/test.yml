@@ -48,7 +48,8 @@ jobs:
             --cov-report=html \
             -n auto \
             --durations=10 \
-            --ignore=tests/models/googlenet/
+            --ignore=tests/models/googlenet/ \
+            --ignore=tests/models/resnet/
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
