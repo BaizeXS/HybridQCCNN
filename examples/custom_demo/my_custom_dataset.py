@@ -3,7 +3,7 @@ from PIL import Image
 from utils.data_management import CustomDataset
 
 
-class SimpleImageDataset(CustomDataset):
+class MyCustomDataset(CustomDataset):
     def _load_data(self):
         data_subdir = "train" if self.train else "test"
         data_path = self.data_dir / data_subdir
