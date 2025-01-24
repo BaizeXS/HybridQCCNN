@@ -54,11 +54,10 @@ def test_train_epoch(trainer, sample_dataloader):
 
     # Check metrics
     assert isinstance(metrics, dict)
-    assert "loss" in metrics
-    assert "accuracy" in metrics
-    assert "precision" in metrics
-    assert "recall" in metrics
-    assert "f1" in metrics
+    assert all(
+        metric in metrics
+        for metric in ["loss", "accuracy", "precision", "recall", "f1"]
+    )
 
     # Check time statistics
     assert "epoch_time" in metrics
@@ -116,7 +115,7 @@ def test_training_with_scheduler(sample_model, sample_dataloader):
         model=sample_model,
         criterion=criterion,
         optimizer=optimizer,
-        scheduler=scheduler,
+        scheduler=scheduler,  # type: ignore
     )
 
     initial_lr = optimizer.param_groups[0]["lr"]

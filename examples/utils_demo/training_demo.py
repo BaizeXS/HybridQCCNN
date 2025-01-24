@@ -38,9 +38,6 @@ def basic_training_example():
     print(f"Training time: {metrics['epoch_time']:.3f}s")
     print(f"Confusion matrix:\n{conf_matrix}")
 
-    # Clean up
-    trainer.cleanup()
-
 
 def training_with_scheduler_example():
     """
@@ -68,8 +65,7 @@ def training_with_scheduler_example():
     train_metrics, _ = trainer.train_epoch(train_loader, epoch=1)
     print(
         "Training - "
-        f"Loss: {train_metrics['loss']:.4f}, "
-        f"Accuracy: {train_metrics['accuracy']:.4f}"
+        f"Loss: {train_metrics['loss']:.4f}, Accuracy: {train_metrics['accuracy']:.4f}"
     )
     print(f"Training time: {train_metrics['epoch_time']:.3f}s")
 
@@ -79,9 +75,6 @@ def training_with_scheduler_example():
         f"Validation - Loss: {val_metrics['loss']:.4f}, Accuracy: {val_metrics['accuracy']:.4f}"
     )
     print(f"Validation time: {val_metrics['phase_time']:.3f}s")
-
-    # Clean up
-    trainer.cleanup()
 
 
 def metrics_calculation_example():

@@ -39,8 +39,8 @@ class MetricsCalculator:
         _, predictions = torch.max(outputs, dim=1)
 
         # Convert to numpy array for sklearn
-        predictions = predictions.cpu().numpy()  # type: ignore
-        targets = targets.cpu().numpy()  # type: ignore
+        predictions = predictions.detach().cpu().numpy()
+        targets = targets.detach().cpu().numpy()  # type: ignore
 
         # Get the number of classes
         num_classes = outputs.size(1)

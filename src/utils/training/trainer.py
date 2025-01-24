@@ -59,12 +59,12 @@ class Trainer:
             logger (logging.Logger, optional): Logger for tracking training progress.
             memory_tracking (bool): Whether to track GPU memory usage. Defaults to False.
         """
-        self.model = model
-        self.criterion = criterion
-        self.optimizer = optimizer
-        self.scheduler = scheduler
-        self.device = device
-        self.aux_weight = aux_weight
+        self.model: torch.nn.Module = model
+        self.criterion: torch.nn.Module = criterion
+        self.optimizer: torch.optim.Optimizer = optimizer
+        self.scheduler: Optional[torch.optim.lr_scheduler._LRScheduler] = scheduler
+        self.device: str = device
+        self.aux_weight: float = aux_weight
         self.metrics_calculator = MetricsCalculator()
         self.logger = logger or logging.getLogger(__name__)
         self.memory_tracking = memory_tracking
@@ -86,7 +86,7 @@ class Trainer:
                   including loss, accuracy, precision, recall, and F1 score.
                 - A confusion matrix as a NumPy array for the epoch.
         """
-        self.model.train()  # type: ignore
+        self.model.train()
         metrics = defaultdict(float)
         total_samples = 0
         conf_matrix = None
@@ -161,7 +161,7 @@ class Trainer:
                 - A dictionary of averaged metrics for the validation/test phase.
                 - A confusion matrix as a NumPy array for the entire validation/test set.
         """
-        self.model.eval()  # type: ignore
+        self.model.eval()
         metrics = defaultdict(float)
         total_samples = 0
         conf_matrix = None
@@ -249,20 +249,20 @@ class Trainer:
         targets = targets.to(self.device)
 
         # Forward propagation
-        self.optimizer.zero_grad()  # type: ignore
+        self.optimizer.zero_grad()
         # For GoogLeNet model, process auxiliary classifier output
-        if self.is_googlenet and self.model.training:  # type: ignore
-            output, aux_output = self.model(inputs)  # type: ignore
+        if self.is_googlenet and self.model.training:
+            output, aux_output = self.model(inputs)
             loss1 = self.criterion(output, targets)
             loss2 = self.criterion(aux_output, targets)
             loss = loss1 + self.aux_weight * loss2
         else:
-            output = self.model(inputs)  # type: ignore
+            output = self.model(inputs)
             loss = self.criterion(output, targets)
 
         # Backward propagation
         loss.backward()
-        self.optimizer.step()  # type: ignore
+        self.optimizer.step()
 
         return self.metrics_calculator.calculate(output, targets, loss)
 
@@ -286,7 +286,7 @@ class Trainer:
         inputs = inputs.to(self.device)
         targets = targets.to(self.device)
 
-        outputs = self.model(inputs)  # type: ignore
+        outputs = self.model(inputs)
         # For GoogLeNet model, use only the main output during validation
         if self.is_googlenet:
             outputs = outputs[0] if isinstance(outputs, tuple) else outputs
@@ -310,24 +310,3 @@ class Trainer:
             self.logger.info(
                 f"GPU Memory: {allocated:.1f}MB allocated, {cached:.1f}MB cached"
             )
-
-    def cleanup(self):
-        """Clean up resources used by the trainer.
-
-        Performs the following cleanup operations:
-            1. Clears CUDA cache if GPU was used.
-            2. Removes circular references to prevent memory leaks.
-            3. Sets model, optimizer, and scheduler to None.
-
-        Note:
-            This method should be called when the trainer is no longer needed
-            or before creating a new trainer instance.
-        """
-        # Clear CUDA cache if using GPU
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-
-        # Remove circular references
-        self.model = None
-        self.optimizer = None
-        self.scheduler = None
