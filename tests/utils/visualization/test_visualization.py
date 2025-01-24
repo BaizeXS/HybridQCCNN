@@ -57,10 +57,16 @@ def metrics_history_file(tmp_path):
     """Create a temporary metrics history file for testing"""
     metrics_data = {
         "metrics": {
-            "train": {"loss": [0.5, 0.4, 0.3], "accuracy": [0.8, 0.85, 0.9]},
-            "val": {"loss": [0.55, 0.45, 0.35], "accuracy": [0.75, 0.8, 0.85]},
+            "train": {
+                "loss": [0.5, 0.4, 0.3, 0.25, 0.2, 0.15],
+                "accuracy": [0.8, 0.85, 0.9, 0.92, 0.94, 0.95],
+            },
+            "val": {
+                "loss": [0.55, 0.45, 0.35, 0.3, 0.25, 0.22],
+                "accuracy": [0.75, 0.8, 0.85, 0.87, 0.89, 0.9],
+            },
         },
-        "conf_matrices": {"train": [[90, 10], [5, 95]], "val": [[85, 15], [10, 90]]},
+        "conf_matrices": {"train": [[92, 8], [4, 96]], "val": [[88, 12], [7, 93]]},
     }
 
     file_path = tmp_path / "metrics_history.json"
@@ -169,7 +175,7 @@ class TestMetricsPlotter:
             json.dump(invalid_data, f)
 
         plotter = MetricsPlotter()
-        with pytest.raises(ValueError, match="Invalid metrics file format"):
+        with pytest.raises(ValueError, match="Metrics data must contain 'metrics' key"):
             plotter.plot_from_saved_metrics(
                 metrics_path=invalid_file, save_dir=tmp_path, show=False
             )
@@ -177,9 +183,9 @@ class TestMetricsPlotter:
     def test_plot_single_metric_invalid_data(self):
         """Test handling of invalid data in single metric plotting"""
         plotter = MetricsPlotter()
-        invalid_data = {"train": {"loss": "not_a_list"}}
+        invalid_data = {"train": {"loss": [1, "2", 3]}}
 
-        with pytest.raises(TypeError, match="must be a list"):
+        with pytest.raises((TypeError, ValueError), match="must be numeric"):
             plotter.plot_single_metric(data=invalid_data, metric_name="loss")
 
     def test_plot_confusion_matrix_invalid_input(self):

@@ -140,13 +140,35 @@ class MetricsPlotter:
 
         phases = phases or list(data.keys())
         for phase in phases:
-            if phase in data:
-                if not isinstance(data[phase], dict):
-                    raise TypeError(f"Data for phase {phase} must be a dictionary")
-                values = data[phase].get(metric_name, [])
+            # Check if the phase exists in the data
+            if phase not in data:
+                continue
+
+            # Get the data for the phase
+            phase_data = data[phase]
+
+            # Check if the phase data is a dictionary
+            if not isinstance(phase_data, dict):
+                raise TypeError(f"Data for phase '{phase}' must be a dictionary")
+
+            # Check if the metric exists in the phase data
+            try:
+                values = phase_data[metric_name]
                 if not isinstance(values, list):
-                    raise TypeError(f"Values for {phase}/{metric_name} must be a list")
-                plt.plot(values, label=phase)
+                    raise TypeError(
+                        f"Values for '{phase}/{metric_name}' must be a list"
+                    )
+
+                if not all(isinstance(v, (int, float)) for v in values):
+                    raise TypeError(
+                        f"All values in '{phase}/{metric_name}' must be numeric"
+                    )
+
+                plt.plot(values, label=phase, marker="o", markersize=3, alpha=0.7)
+
+            except KeyError:
+                print(f"Warning: Metric '{metric_name}' not found in phase '{phase}'")
+                continue
 
         plt.legend()
         self._save_and_show(save_path, show)
@@ -178,29 +200,69 @@ class MetricsPlotter:
                 If None, uses current working directory.
             show (bool): Whether to display the plots. Defaults to False.
         """
+        # Set up save directory
         save_dir = Path(save_dir) if save_dir else Path.cwd()
         save_dir.mkdir(parents=True, exist_ok=True)
 
+        # Get model names
         model_names = model_names or list(data.keys())
+        if not model_names:
+            print("Warning: No models found in data")
+            return
 
+        # Iterate over each metric
         for metric_name in metric_names:
             self._setup_plot(
-                title=f"{metric_name.capitalize()} Comparison", figsize=(12, 6)
+                title=f"{metric_name.capitalize()} Comparison",
+                figsize=(12, 6),
+                ylabel=metric_name.capitalize(),
             )
 
+            # Plot curves for each model
             for model_name in model_names:
-                if model_name in data:
-                    model_data = data[model_name]
-                    curr_phases = phases or list(model_data.keys())
+                if model_name not in data:
+                    print(f"Warning: Model '{model_name}' not found in data")
+                    continue
 
-                    for phase in curr_phases:
-                        if phase in model_data and metric_name in model_data[phase]:
-                            plt.plot(
-                                model_data[phase][metric_name],
-                                label=f"{model_name}-{phase}",
+                model_data = data[model_name]
+                if not isinstance(model_data, dict):
+                    print(f"Warning: Invalid data format for model '{model_name}'")
+                    continue
+
+                curr_phases = phases or list(model_data.keys())
+
+                # Plot curves for each phase
+                for phase in curr_phases:
+                    try:
+                        if phase not in model_data:
+                            continue
+                        if metric_name not in model_data[phase]:
+                            continue
+
+                        values = model_data[phase][metric_name]
+                        if not isinstance(values, list):
+                            print(
+                                f"Warning: Invalid values format for "
+                                f"'{model_name}/{phase}/{metric_name}'"
                             )
+                            continue
 
-            plt.legend()
+                        plt.plot(
+                            values,
+                            label=f"{model_name}-{phase}",
+                            marker="o",
+                            markersize=3,
+                            alpha=0.7,
+                            linestyle="-",
+                        )
+                    except Exception as e:
+                        print(
+                            f"Error plotting {model_name}/{phase}/{metric_name}: {str(e)}"
+                        )
+                        continue
+
+            plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+            plt.tight_layout()
             self._save_and_show(save_dir / f"{metric_name}_comparison.png", show)
 
     def plot_from_saved_metrics(
@@ -213,69 +275,38 @@ class MetricsPlotter:
     ) -> None:
         """Plot metrics from saved JSON metrics file generated by ModelManager.
 
-        This method loads and plots metrics data that was saved by ModelManager.
-        It can handle both single epoch metrics files and complete history files.
-
         Args:
-            metrics_path (Union[str, Path]): Path to the metrics JSON file.
-                Can be either 'metrics_epoch_{N}.json' or 'metrics_history.json'.
-            metric_names (Optional[List[str]]): List of metric names to plot.
-                If None, plots all available metrics.
-            phases (Optional[List[str]]): List of phases to plot.
-                If None, plots all available phases.
-            save_dir (Optional[Union[str, Path]]): Directory to save the plots.
-                If None, uses the directory containing the metrics file.
-            show (bool): Whether to display the plots. Defaults to False.
+            metrics_path: Path to the metrics JSON file
+            metric_names: List of metric names to plot
+            phases: List of phases to plot
+            save_dir: Directory to save the plots
+            show: Whether to display the plots
 
         Raises:
-            FileNotFoundError: If metrics file doesn't exist.
-            ValueError: If metrics file format is invalid.
+            FileNotFoundError: If metrics file doesn't exist
+            ValueError: If metrics file format is invalid
         """
-        metrics_path = Path(metrics_path)
-        if not metrics_path.exists():
-            raise FileNotFoundError(f"Metrics file not found: {metrics_path}")
+        # Load and validate metrics data
+        metrics, conf_matrices = self._load_and_validate_metrics(metrics_path)
 
         # Set up save directory
-        if save_dir is None:
-            save_dir = metrics_path.parent / "plots"
-        save_dir = Path(save_dir)
+        metrics_path = Path(metrics_path)
+        save_dir = Path(save_dir) if save_dir else metrics_path.parent / "plots"
         save_dir.mkdir(parents=True, exist_ok=True)
 
-        # Load metrics data
-        with open(metrics_path, "r") as f:
-            metrics_data = json.load(f)
-
-        if not isinstance(metrics_data, dict) or "metrics" not in metrics_data:
-            raise ValueError("Invalid metrics file format")
-
-        metrics = metrics_data["metrics"]
-        conf_matrices = metrics_data.get("conf_matrices", {})
-
-        # Determine available phases
+        # Get available phases
         available_phases = set(metrics.keys())
         if phases:
-            available_phases = available_phases.intersection(
-                phases
-            )  # Get the intersection of available phases and requested phases
+            available_phases = available_phases.intersection(phases)
+            if not available_phases:
+                raise ValueError(
+                    f"No requested phases found. Available phases: {sorted(metrics.keys())}"
+                )
 
-        # Determine available metrics
-        available_metrics = set()
-        for phase_metrics in metrics.values():
-            available_metrics.update(phase_metrics.keys())
+        # Get metrics to plot
+        metrics_to_plot = self._get_available_metrics(metrics, metric_names)
 
-        # Filter metrics to plot
-        if metric_names:
-            # Validate requested metrics exist
-            invalid_metrics = (
-                set(metric_names) - available_metrics
-            )  # Get the difference between requested metrics and available metrics
-            if invalid_metrics:
-                raise ValueError(f"Requested metrics not found: {invalid_metrics}")
-            metrics_to_plot = metric_names
-        else:
-            metrics_to_plot = sorted(available_metrics)  # Sort the available metrics
-
-        # Plot each metric
+        # Plot metrics
         for metric_name in metrics_to_plot:
             self.plot_single_metric(
                 data=metrics,
@@ -285,25 +316,108 @@ class MetricsPlotter:
                 show=show,
             )
 
-        # Plot confusion matrices if available
+        # Plot confusion matrices
         for phase in available_phases:
             if phase in conf_matrices:
-                conf_matrix = conf_matrices[phase]
-                # Ensure the confusion matrix is a 2D array
-                if isinstance(conf_matrix, list) and isinstance(conf_matrix[0], list):
-                    # If it's history data, take the last one
-                    if isinstance(conf_matrix[0][0], list):
-                        conf_matrix = conf_matrix[-1]
+                self._plot_confusion_matrix_for_phase(
+                    conf_matrix=conf_matrices[phase],
+                    phase=phase,
+                    save_path=save_dir / f"confusion_matrix_{phase}.png",
+                    show=show,
+                )
 
-                    # Convert to numpy array and verify shape
-                    conf_matrix = np.array(conf_matrix)
-                    if (
-                        len(conf_matrix.shape) == 2
-                        and conf_matrix.shape[0] == conf_matrix.shape[1]
-                    ):
-                        self.plot_confusion_matrix(
-                            conf_matrix=conf_matrix,
-                            classes=list(range(len(conf_matrix))),  # type: ignore
-                            save_path=save_dir / f"confusion_matrix_{phase}.png",
-                            show=show,
-                        )
+    def _load_and_validate_metrics(
+        self, metrics_path: Union[str, Path]
+    ) -> Tuple[Dict, Dict]:
+        """Load and validate metrics data from JSON file.
+
+        Args:
+            metrics_path: Path to metrics JSON file
+
+        Returns:
+            Tuple containing metrics dict and confusion matrices dict
+
+        Raises:
+            FileNotFoundError: If metrics file doesn't exist
+            ValueError: If metrics file format is invalid
+        """
+        metrics_path = Path(metrics_path)
+        if not metrics_path.exists():
+            raise FileNotFoundError(f"Metrics file not found: {metrics_path}")
+
+        try:
+            with open(metrics_path, "r") as f:
+                metrics_data = json.load(f)
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid JSON format in file: {metrics_path}")
+
+        if not isinstance(metrics_data, dict):
+            raise ValueError("Metrics data must be a dictionary")
+
+        if "metrics" not in metrics_data:
+            raise ValueError("Metrics data must contain 'metrics' key")
+
+        return metrics_data["metrics"], metrics_data.get("conf_matrices", {})
+
+    def _get_available_metrics(
+        self, metrics: Dict, metric_names: Optional[List[str]] = None
+    ) -> List[str]:
+        """Get list of metrics to plot based on available and requested metrics.
+
+        Args:
+            metrics: Dictionary of metrics data
+            metric_names: Optional list of requested metric names
+
+        Returns:
+            List of metric names to plot
+
+        Raises:
+            ValueError: If requested metrics are not found
+        """
+        available_metrics = set()
+        for phase_metrics in metrics.values():
+            available_metrics.update(phase_metrics.keys())
+
+        if metric_names:
+            invalid_metrics = set(metric_names) - available_metrics
+            if invalid_metrics:
+                raise ValueError(
+                    f"Requested metrics not found: {invalid_metrics}. "
+                    f"Available metrics are: {sorted(available_metrics)}"
+                )
+            return metric_names
+
+        return sorted(available_metrics)
+
+    def _plot_confusion_matrix_for_phase(
+        self,
+        conf_matrix: Union[List, np.ndarray],
+        phase: str,
+        save_path: Path,
+        show: bool = False,
+    ) -> None:
+        """Plot confusion matrix for a specific phase if valid.
+
+        Args:
+            conf_matrix: Confusion matrix data
+            phase: Phase name (train/val/test)
+            save_path: Path to save the plot
+            show: Whether to display the plot
+        """
+        if isinstance(conf_matrix, list) and isinstance(conf_matrix[0], list):
+            # Handle history data
+            if isinstance(conf_matrix[0][0], list):
+                conf_matrix = conf_matrix[-1]
+
+            conf_matrix = np.array(conf_matrix)
+
+            if (
+                len(conf_matrix.shape) == 2
+                and conf_matrix.shape[0] == conf_matrix.shape[1]
+            ):
+                self.plot_confusion_matrix(
+                    conf_matrix=conf_matrix,
+                    classes=[str(i) for i in range(len(conf_matrix))],
+                    save_path=save_path / f"confusion_matrix_{phase}.png",
+                    show=show,
+                )

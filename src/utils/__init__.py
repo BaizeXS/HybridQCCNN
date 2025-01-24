@@ -20,7 +20,6 @@ Example:
     >>> plotter = MetricsPlotter()
 """
 
-import logging
 from typing import List
 
 from .data_management import CustomDataset, DatasetManager  # noqa: F401
@@ -40,18 +39,4 @@ __training__: List[str] = ["Trainer", "MetricsCalculator"]
 # Visualization
 __visualization__: List[str] = ["MetricsPlotter", "QuantumPlotter", "ModelPlotter"]
 
-__all__ = __model_management__ + __data_management__ + __training__ + __visualization__
-
-# Version of the utils package
-__version__ = "0.1.0"
-
-# Package metadata
-__author__ = "BaizeXS"
-__email__ = "baizexs@gmail.com"
-__description__ = (
-    "Utilities for quantum-classical hybrid model management, "
-    "training, and visualization"
-)
-
-# Add a null handler to the logger
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+__all__ = __model_management__ + __data_management__ + __training__ + __visualization__  # type: ignore

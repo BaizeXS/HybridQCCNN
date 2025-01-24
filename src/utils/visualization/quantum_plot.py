@@ -43,7 +43,7 @@ class QuantumPlotter:
 
         vectors = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
         if state is not None:
-            vectors.append(state)  # type: ignore
+            vectors.append(state.tolist())
 
         for vector in vectors:
             sphere.add_vectors(vector)

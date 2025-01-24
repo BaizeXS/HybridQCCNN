@@ -151,7 +151,7 @@ def model_plotter_example(output_dir: Path):
 def main():
     """Run all visualization examples"""
     # Create output directory
-    output_dir = Path("outputs/visualization_demo")
+    output_dir = Path("./examples/visualization_demo_outputs")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Run examples
