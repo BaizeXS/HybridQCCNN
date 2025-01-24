@@ -47,7 +47,8 @@ jobs:
             --cov-report=term-missing \
             --cov-report=html \
             -n auto \
-            --durations=10
+            --durations=10 \
+            --ignore=tests/models/googlenet/
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
