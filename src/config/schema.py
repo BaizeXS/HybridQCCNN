@@ -13,6 +13,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+VALID_DATASET_TYPES = {"MNIST", "CIFAR10", "CUSTOM"}
+VALID_MODEL_TYPES = {"classic", "hybrid", "custom"}
+DEFAULT_DEVICE = "cpu"
+DEFAULT_SEED = 42
+
 
 @dataclass
 class DataConfig:
@@ -73,10 +78,10 @@ class DataConfig:
     def __post_init__(self):
         """Validate configuration after initialization."""
         # Validate dataset_type
-        valid_types = {"MNIST", "CIFAR10", "CUSTOM"}
-        if self.dataset_type not in valid_types:
+        if self.dataset_type not in VALID_DATASET_TYPES:
             raise ValueError(
-                f"Invalid dataset_type: {self.dataset_type}. Must be one of {valid_types}"
+                f"Invalid dataset_type: {self.dataset_type}. "
+                f"Must be one of {VALID_DATASET_TYPES}"
             )
 
         # Validate CUSTOM dataset_type
@@ -144,7 +149,7 @@ class ModelConfig:
 
     Attributes:
         name (str): Model name
-        model_type (str): Model type ("classic", "quantum", "custom")
+        model_type (str): Model type ("classic", "hybrid", "custom")
         model_kwargs (Dict): Model parameters
         quantum_config (QuantumConfig): Quantum configuration
         custom_model_path (Path): Path to custom model code
@@ -158,6 +163,8 @@ class ModelConfig:
 
     def __post_init__(self):
         """Validate and process initialization parameters."""
+        if self.model_type not in VALID_MODEL_TYPES:
+            raise ValueError(f"Invalid model_type: {self.model_type}")
         if self.model_type == "custom" and not self.custom_model_path:
             raise ValueError("custom_model_path must be provided for custom models")
         if self.custom_model_path:
@@ -221,8 +228,8 @@ class Config:
     data: DataConfig
     model: ModelConfig
     training: TrainingConfig
-    device: str = "cpu"
-    seed: int = 42
+    device: str = DEFAULT_DEVICE
+    seed: int = DEFAULT_SEED
     output_dir: Path = Path("./outputs")
 
     def __post_init__(self):

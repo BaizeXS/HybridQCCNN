@@ -26,11 +26,3 @@ __all__ = [
     "TrainingConfig",
     "QuantumConfig",
 ]
-
-# Version of the config package
-__version__ = "0.1.0"
-
-# Package metadata
-__author__ = "BaizeXS"
-__email__ = "baizexs@gmail.com"
-__description__ = "Configuration management for quantum-classical hybrid models"

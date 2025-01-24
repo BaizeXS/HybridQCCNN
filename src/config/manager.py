@@ -88,10 +88,22 @@ class ConfigManager:
                 config_dict = yaml.safe_load(f)
 
                 # Handle path type fields
-                if config_dict["data"].get("dataset_path"):
-                    config_dict["data"]["dataset_path"] = Path(
-                        config_dict["data"]["dataset_path"]
+                data_config = config_dict["data"]
+                if data_config.get("dataset_path"):
+                    data_config["dataset_path"] = Path(data_config["dataset_path"])
+                if data_config.get("custom_dataset_path"):
+                    data_config["custom_dataset_path"] = Path(
+                        data_config["custom_dataset_path"]
                     )
+
+                model_config = config_dict["model"]
+                if model_config.get("custom_model_path"):
+                    model_config["custom_model_path"] = Path(
+                        model_config["custom_model_path"]
+                    )
+
+                if config_dict.get("output_dir"):
+                    config_dict["output_dir"] = Path(config_dict["output_dir"])
 
                 # Validate configuration dictionary
                 self._validate_config_dict(config_dict)
