@@ -78,29 +78,25 @@ class ModelManager:
         self.conf_matrices = defaultdict(list)
 
         # Initialize TensorBoard
-        self.writer = SummaryWriter(self.tensorboard_dir)  # type: ignore[arg-type]
+        self.writer = SummaryWriter(self.tensorboard_dir)
 
     def _init_directories(self):
         """Set up model directory structure."""
         self.model_dir = self.config.base_dir / self.model_name
-        self.checkpoint_dir = self.model_dir / "checkpoints"  # Store checkpoints
-        self.weights_dir = self.model_dir / "weights"  # Store model weights
-        self.tensorboard_dir = (
-            self.config.tensorboard_dir / self.model_name
-        )  # TensorBoard logs
-        self.log_dir = self.model_dir / "logs"  # Log files
-        self.metrics_dir = (
-            self.model_dir / "metrics"
-        )  # Store metrics and confusion matrix data
+        self.checkpoint_dir = self.model_dir / "checkpoints"
+        self.weights_dir = self.model_dir / "weights"
+        self.log_dir = self.model_dir / "logs"
+        self.metrics_dir = self.model_dir / "metrics"
+        self.tensorboard_dir = self.config.tensorboard_dir / self.model_name
 
-        # Create necessary directories
+        # Create directories
         for dir_path in [
             self.model_dir,
             self.checkpoint_dir,
             self.weights_dir,
-            self.tensorboard_dir,
             self.log_dir,
             self.metrics_dir,
+            self.tensorboard_dir,
         ]:
             dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -140,11 +136,18 @@ class ModelManager:
         """
         if self.config.model.model_type == "custom":
             # Load custom model
-            model_path = Path(self.config.model.custom_model_path)  # type: ignore
-            spec = importlib.util.spec_from_file_location(model_path.stem, model_path)  # type: ignore
-            module = importlib.util.module_from_spec(spec)  # type: ignore
+            if self.config.model.custom_model_path is None:
+                raise ValueError("Custom model path cannot be None")
+            model_path = Path(str(self.config.model.custom_model_path))
+            spec = importlib.util.spec_from_file_location(model_path.stem, model_path)
+
+            # Add null check for spec and loader
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Could not load module: {model_path}")
+
+            module = importlib.util.module_from_spec(spec)
             sys.modules[model_path.stem] = module
-            spec.loader.exec_module(module)  # type: ignore
+            spec.loader.exec_module(module)
 
             # Get model class
             model_class = getattr(module, self.config.model.name)
@@ -163,7 +166,7 @@ class ModelManager:
                 self.logger.warning(
                     f"Model num_classes ({model_kwargs['num_classes']}) "
                     f"does not match dataset ({self.config.data.num_classes}). "
-                    f"Using dataset value."
+                    "Using dataset value."
                 )
         model_kwargs["num_classes"] = self.config.data.num_classes
 
@@ -199,7 +202,7 @@ class ModelManager:
         """
         if not self.config.training.scheduler_kwargs:
             return None
-        return torch.optim.lr_scheduler.StepLR(  # type: ignore[return-value]
+        return torch.optim.lr_scheduler.StepLR(
             self._get_optimizer(), **self.config.training.scheduler_kwargs
         )
 
@@ -220,8 +223,8 @@ class ModelManager:
             model=self.model,
             criterion=self._get_criterion(),
             optimizer=self._get_optimizer(),
-            scheduler=self._get_scheduler(),  # type: ignore[arg-type]
-            device=self.device,  # type: ignore[arg-type]
+            scheduler=self._get_scheduler(),  # type: ignore
+            device=str(self.device),
             logger=self.logger,
             **kwargs,
         )
@@ -261,11 +264,11 @@ class ModelManager:
         trainer = Trainer(
             model=self.model,
             criterion=self._get_criterion(),
-            optimizer=None,  # type: ignore[arg-type]
-            device=self.device,  # type: ignore[arg-type]
+            optimizer=self._get_optimizer(),
+            device=str(self.device),
         )
         test_metrics, conf_matrix = trainer.evaluate(test_loader)
-        self._update_metrics("test", test_metrics, conf_matrix, epoch=None)  # type: ignore[arg-type]
+        self._update_metrics("test", test_metrics, conf_matrix, epoch=None)
         return test_metrics
 
     def predict(self, inputs):
@@ -284,7 +287,7 @@ class ModelManager:
             inputs = inputs.to(self.device)
             outputs = self.model(inputs)
             _, predicted = torch.max(outputs, 1)
-        return predicted.cpu()
+        return predicted.cpu().numpy()
 
     def save_checkpoint(self, epoch: int, is_best: bool = False):
         """Save checkpoint.
@@ -296,11 +299,14 @@ class ModelManager:
         # Save model-related data
         checkpoint = {
             "epoch": epoch,
-            "model_state_dict": self.model.state_dict(),  # type: ignore[attr-defined]
-            "optimizer_state_dict": self._get_optimizer().state_dict(),  # type: ignore[attr-defined]
+            "model_state_dict": self.model.state_dict(),
+            "optimizer_state_dict": self._get_optimizer().state_dict(),
         }
-        if self._get_scheduler():
-            checkpoint["scheduler_state_dict"] = self._get_scheduler().state_dict()  # type: ignore[attr-defined]
+
+        # Save scheduler state if it exists
+        scheduler = self._get_scheduler()
+        if scheduler is not None:
+            checkpoint["scheduler_state_dict"] = scheduler.state_dict()
 
         # Save latest checkpoint
         checkpoint_path = self.checkpoint_dir / f"checkpoint_epoch_{epoch}.pt"
@@ -313,42 +319,12 @@ class ModelManager:
             self.logger.info(f"Save best model weights to {best_path}")
 
         # Save current epoch metrics
-        current_metrics = {
-            "metrics": {
-                phase: {
-                    metric_name: values[-1] if values else None  # 只取最后一个值
-                    for metric_name, values in phase_metrics.items()
-                }
-                for phase, phase_metrics in self.metrics.items()
-            },
-            "conf_matrices": {
-                phase: matrices[-1].tolist() if matrices else None  # 只取最后一个矩阵
-                for phase, matrices in self.conf_matrices.items()
-            },
-            "epoch": epoch,
-        }
         metrics_path = self.metrics_dir / f"metrics_epoch_{epoch}.json"
-        with open(metrics_path, "w", encoding="utf-8") as f:
-            json.dump(current_metrics, f, indent=2)  # type: ignore[arg-type]
+        self.save_metrics(epoch, metrics_path, is_history=False)
 
-        # Save history metrics
-        history_metrics = {
-            "metrics": {
-                phase: {
-                    metric_name: np.array(values).tolist()
-                    for metric_name, values in phase_metrics.items()
-                }
-                for phase, phase_metrics in self.metrics.items()
-            },
-            "conf_matrices": {
-                phase: [matrix.tolist() for matrix in matrices]
-                for phase, matrices in self.conf_matrices.items()
-            },
-            "epoch": epoch,
-        }
+        # Save complete metrics history
         history_path = self.metrics_dir / "metrics_history.json"
-        with open(history_path, "w", encoding="utf-8") as f:
-            json.dump(history_metrics, f, indent=2)  # type: ignore[arg-type]
+        self.save_metrics(epoch, history_path, is_history=True)
 
         self.logger.info(f"Save checkpoint to {checkpoint_path}")
         self.logger.info(f"Save metrics to {metrics_path}")
@@ -396,6 +372,38 @@ class ModelManager:
             self.logger.error(f"Failed to load checkpoint: {str(e)}")
             raise
 
+    def save_metrics(self, epoch: int, path: Path, is_history: bool = False):
+        """Save metrics to file.
+
+        Args:
+            epoch (int): Epoch number.
+            path (Path): Path to save metrics data.
+            is_history (bool): Flag indicating if this is the history metrics.
+        """
+        metrics_data = {
+            "metrics": {
+                phase: {
+                    metric_name: (
+                        values if is_history else values[-1] if values else None
+                    )
+                    for metric_name, values in phase_metrics.items()
+                }
+                for phase, phase_metrics in self.metrics.items()
+            },
+            "conf_matrices": {
+                phase: (
+                    [m.tolist() for m in matrices]
+                    if is_history
+                    else matrices[-1].tolist() if matrices else None
+                )
+                for phase, matrices in self.conf_matrices.items()
+            },
+            "epoch": epoch,
+        }
+
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(metrics_data, f, indent=2)
+
     def load_metrics(
         self, epoch: Optional[int] = None, metrics_path: Optional[Path] = None
     ):
@@ -413,50 +421,43 @@ class ModelManager:
         Raises:
             FileNotFoundError: If metrics file not found.
         """
-        if metrics_path is None:
-            if epoch is not None:
-                # Load specific epoch metrics
-                metrics_path = self.metrics_dir / f"metrics_epoch_{epoch}.json"
-            else:
-                # Load complete history
-                metrics_path = self.metrics_dir / "metrics_history.json"
-        else:
-            metrics_path = Path(metrics_path)
+        # Get metrics path
+        metrics_path = metrics_path or (
+            self.metrics_dir / f"metrics_epoch_{epoch}.json"
+            if epoch is not None
+            else self.metrics_dir / "metrics_history.json"
+        )
 
+        # Check if metrics file exists
         if not metrics_path.exists():
             raise FileNotFoundError(f"Metrics file not found: {metrics_path}")
 
+        # Load metrics data
         self.logger.info(f"Load metrics data: {metrics_path}")
         with open(metrics_path, "r") as f:
             metrics_data = json.load(f)
 
+        # Initialize metrics dictionary and confusion matrices
         self.metrics = defaultdict(lambda: defaultdict(list))
+        self.conf_matrices = defaultdict(list)
 
-        if epoch is not None:
-            # For single epoch metrics, convert single values to lists
-            for phase, phase_metrics in metrics_data["metrics"].items():
-                for metric_name, value in phase_metrics.items():
-                    self.metrics[phase][metric_name] = (
-                        [value] if value is not None else []
-                    )
+        # Convert values to lists for single epoch or load history as is
+        for phase, phase_metrics in metrics_data["metrics"].items():
+            for metric_name, values in phase_metrics.items():
+                self.metrics[phase][metric_name] = (
+                    [values] if epoch is not None else values
+                )
 
-            # Convert single confusion matrix to list
-            self.conf_matrices = {
-                phase: [np.array(matrix)] if matrix is not None else []
-                for phase, matrix in metrics_data["conf_matrices"].items()
-            }
-        else:
-            # For complete history, load as is
-            for phase, phase_metrics in metrics_data["metrics"].items():
-                for metric_name, values in phase_metrics.items():
-                    self.metrics[phase][metric_name] = values
+        # Convert confusion matrices to numpy arrays
+        for phase, matrices in metrics_data["conf_matrices"].items():
+            matrices = [matrices] if epoch is not None else matrices
+            self.conf_matrices[phase] = [np.array(m) for m in matrices if m is not None]
 
-            self.conf_matrices = {
-                phase: [np.array(matrix) for matrix in matrices]
-                for phase, matrices in metrics_data["conf_matrices"].items()
-            }
-
-        return metrics_data["epoch"]
+        return (
+            metrics_data["epoch"]
+            if epoch is not None
+            else (metrics_data["epoch"], metrics_data)
+        )
 
     def load_weights(self, weights_path: Union[str, Path]):
         """Load model weights only.
@@ -490,7 +491,7 @@ class ModelManager:
             conf_matrix (np.ndarray): The confusion matrix for the current phase.
             epoch (int): The current epoch number.
         """
-        # Update metrics history
+        # Save metrics history
         for name, value in metrics.items():
             self.metrics[phase][name].append(value)
             self.writer.add_scalar(f"{phase}/{name}", value, epoch)

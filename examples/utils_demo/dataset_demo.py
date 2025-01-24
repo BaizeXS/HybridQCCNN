@@ -41,7 +41,7 @@ def basic_dataset_example():
     print(f"Test batches: {len(test_loader)}")
 
 
-class SimpleImageDataset(CustomDataset):
+class MyCustomDataset(CustomDataset):
     """Example implementation of CustomDataset"""
 
     def _load_data(self):
@@ -106,11 +106,11 @@ def custom_dataset_example():
                 img.save(class_dir / f"sample_{i}.jpg")
 
     # Create custom dataset implementation
-    dataset_file = custom_dataset_dir / "simple_image_dataset.py"
+    dataset_file = custom_dataset_dir / "my_custom_dataset.py"
     dataset_code = """from utils.data_management import CustomDataset
 from PIL import Image
 
-class SimpleImageDataset(CustomDataset):
+class MyCustomDataset(CustomDataset):
     def _load_data(self):
         data_subdir = 'train' if self.train else 'test'
         data_path = self.data_dir / data_subdir
@@ -142,7 +142,7 @@ class SimpleImageDataset(CustomDataset):
     dataset_file.write_text(dataset_code)
 
     config = DataConfig(
-        name="SimpleImageDataset",  # Must be the same as the dataset class name
+        name="MyCustomDataset",  # Must be the same as the dataset class name
         input_shape=(3, 224, 224),
         num_classes=2,  # Match the number of classes we created
         dataset_type="CUSTOM",
