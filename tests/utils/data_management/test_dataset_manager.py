@@ -36,7 +36,7 @@ def default_manager():
         dataset_type="MNIST",
         **TEST_CONFIG,
     )
-    return DatasetManager(config, data_dir="./datasets")  # type: ignore
+    return DatasetManager(config, data_dir=Path("./datasets"))
 
 
 @pytest.fixture
@@ -65,7 +65,7 @@ def custom_manager(mock_dataset_file):
         custom_dataset_path=mock_dataset_file,
         **TEST_CONFIG,
     )
-    return DatasetManager(config, data_dir="./datasets")  # type: ignore
+    return DatasetManager(config, data_dir=Path("./datasets"))
 
 
 def test_initialization(default_manager):
@@ -210,7 +210,7 @@ def test_custom_dataset_loading(mock_dataset_file):
         val_transforms=[{"name": "ToTensor"}],
         test_transforms=[{"name": "ToTensor"}],
     )
-    manager = DatasetManager(config, data_dir="./datasets")  # type: ignore
+    manager = DatasetManager(config, data_dir=Path("./datasets"))
     train_loader, val_loader, test_loader = manager.get_data_loaders()
 
     assert train_loader is not None

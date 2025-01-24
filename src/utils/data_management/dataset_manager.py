@@ -151,8 +151,11 @@ class DatasetManager:
         Raises:
             ValueError: If dataset configuration is invalid.
         """
-        if self.config.dataset_type == "custom" and not self.config.dataset_path:
-            raise ValueError("Custom dataset must provide dataset_path")
+        if (
+            self.config.dataset_type.upper() == "CUSTOM"
+            and not self.config.custom_dataset_path
+        ):
+            raise ValueError("Custom dataset must provide custom_dataset_path")
 
     def get_data_loaders(self) -> Tuple[DataLoader, DataLoader, DataLoader]:
         """Get training, validation, and test data loaders.
@@ -176,10 +179,7 @@ class DatasetManager:
         )
 
         # Set validation dataset transformation
-        if isinstance(val_dataset, Subset):
-            val_dataset.dataset.transform = val_transform  # type: ignore[attr-defined]
-        else:
-            val_dataset.transform = val_transform
+        val_dataset.transform = val_transform  # type: ignore
 
         # Create data loaders
         train_loader = self._create_loader(train_dataset, shuffle=True)
@@ -252,9 +252,14 @@ class DatasetManager:
             spec = importlib.util.spec_from_file_location(
                 custom_dataset_path.stem, custom_dataset_path
             )
-            module = importlib.util.module_from_spec(spec)  # type: ignore
+
+            # Add null check for spec and loader
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Could not load module: {custom_dataset_path}")
+
+            module = importlib.util.module_from_spec(spec)
             sys.modules[custom_dataset_path.stem] = module
-            spec.loader.exec_module(module)  # type: ignore
+            spec.loader.exec_module(module)
 
             # Get dataset class
             dataset_class = getattr(module, self.config.name)
@@ -283,9 +288,11 @@ class DatasetManager:
         if not hasattr(dataset, "__len__"):
             raise ValueError("Dataset must implement __len__")
 
-        train_size = int(split_ratio * len(dataset))  # type: ignore[arg-type]
-        val_size = len(dataset) - train_size  # type: ignore[arg-type]
+        dataset_size = len(dataset)  # type: ignore
+        train_size = int(split_ratio * dataset_size)
+        val_size = dataset_size - train_size
 
+        # TODO: fix this, as default random seed is HARDCODED
         train_subset, val_subset = random_split(
             dataset, [train_size, val_size], generator=torch.Generator().manual_seed(42)
         )

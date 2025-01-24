@@ -33,7 +33,7 @@ def basic_dataset_example():
         ],
     )
 
-    manager = DatasetManager(config, data_dir="./datasets")  # type: ignore
+    manager = DatasetManager(config, data_dir=Path("./datasets"))
     train_loader, val_loader, test_loader = manager.get_data_loaders()
 
     print(f"Training batches: {len(train_loader)}")
@@ -85,11 +85,11 @@ class SimpleImageDataset(CustomDataset):
 def custom_dataset_example():
     """Example of using custom dataset implementation"""
     # Create custom dataset file
-    custom_dataset_dir = Path("./templates")
+    custom_dataset_dir = Path("./examples/custom_demo")
     custom_dataset_dir.mkdir(exist_ok=True)
 
     # Create data directories
-    data_root = Path("./datasets/images")
+    data_root = Path("./examples/custom_demo/data")
     train_dir = data_root / "train"
     test_dir = data_root / "test"
 
@@ -227,8 +227,12 @@ def transformation_example():
         test_transforms=val_transforms,  # Use same transforms as validation for test
     )
 
-    manager = DatasetManager(config, data_dir="./datasets")  # type: ignore
+    manager = DatasetManager(config, data_dir=Path("./datasets"))
     train_loader, val_loader, test_loader = manager.get_data_loaders()
+
+    print(f"Training batches: {len(train_loader)}")
+    print(f"Validation batches: {len(val_loader)}")
+    print(f"Test batches: {len(test_loader)}")
 
 
 if __name__ == "__main__":
