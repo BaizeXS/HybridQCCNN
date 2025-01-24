@@ -62,11 +62,32 @@ def test_quanv2d_initialization(default_layer):
 @pytest.mark.parametrize(
     "invalid_param",
     [
-        {"kernel_size": 0, "error_match": "kernel_size must be positive"},
-        {"in_channels": 0, "error_match": "in_channels must be positive"},
-        {"out_channels": 0, "error_match": "out_channels must be positive"},
-        {"stride": 0, "error_match": "stride must be positive"},
-        {"padding": -1, "error_match": "padding cannot be negative"},
+        {
+            "kernel_size": 0,
+            "error_match": (
+                "kernel_size must be a positive integer or tuple of positive integers"
+            ),
+        },
+        {
+            "in_channels": 0,
+            "error_match": "in_channels must be positive",
+        },
+        {
+            "out_channels": 0,
+            "error_match": "out_channels must be positive",
+        },
+        {
+            "stride": 0,
+            "error_match": (
+                "stride must be a positive integer or tuple of positive integers"
+            ),
+        },
+        {
+            "padding": -1,
+            "error_match": (
+                "padding must be a non-negative integer or tuple of non-negative integers"
+            ),
+        },
     ],
 )
 def test_invalid_parameters(invalid_param):
@@ -183,13 +204,13 @@ def test_aggregation_methods(method):
     }
 
     # For WEIGHTED method, add extra configuration
-    if method == AggregationMethod.WEIGHTED:
-        layer_config.update(
-            {
-                "preserve_quantum_info": False,  # Ensure weights are initialized correctly
-                "qdevice": "default.qubit",  # Add quantum device configuration
-            }
-        )
+    # if method == AggregationMethod.WEIGHTED:
+    #     layer_config.update(
+    #         {
+    #             "preserve_quantum_info": False,  # Ensure weights are initialized correctly
+    #             "qdevice": "default.qubit",  # Add quantum device configuration
+    #         }
+    #     )
 
     layer = Quanv2d(**layer_config)
 
