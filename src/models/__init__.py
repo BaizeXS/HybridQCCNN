@@ -104,11 +104,3 @@ __all__ = [
     # Model Registry
     "ALL_MODELS",
 ]
-
-# Version of the models package
-__version__ = "0.1.0"
-
-# Package metadata
-__author__ = "BaizeXS"
-__email__ = "baizexs@gmail.com"
-__description__ = "Neural network architectures for quantum-classical hybrid systems"

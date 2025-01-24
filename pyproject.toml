@@ -116,7 +116,7 @@ addopts = [
     "--cov=src",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "-n=auto",
+    "-n=1",
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -131,5 +131,5 @@ filterwarnings = [
     "ignore::RuntimeWarning",
     "ignore::torch.jit.TracerWarning",
 ]
-timeout = 900
+timeout = 300
 share_fixtures = true
