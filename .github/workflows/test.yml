@@ -47,10 +47,8 @@ jobs:
             --cov-report=term-missing \
             --cov-report=html \
             -n auto \
+            -m "not heavy_model" \
             --durations=10 \
-            --ignore=tests/models/googlenet/ \
-            --ignore=tests/models/resnet/ \
-            --ignore=tests/models/vgg/
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
