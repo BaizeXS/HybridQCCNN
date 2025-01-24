@@ -224,23 +224,22 @@ class DatasetManager:
         Raises:
             ValueError: If dataset type is unknown or custom dataset configuration is invalid
         """
-        if self.config.dataset_type.upper() == "CIFAR10":
-            return datasets.CIFAR10(
+        dataset_type = self.config.dataset_type.upper()
+
+        # Handle built-in datasets
+        builtin_datasets = {
+            "MNIST": datasets.MNIST,
+            "FASHIONMNIST": datasets.FashionMNIST,
+            "CIFAR10": datasets.CIFAR10,
+            "CIFAR100": datasets.CIFAR100,
+        }
+
+        if dataset_type in builtin_datasets:
+            return builtin_datasets[dataset_type](
                 root=self.data_dir, train=train, download=True, transform=transform
             )
-        elif self.config.dataset_type.upper() == "MNIST":
-            return datasets.MNIST(
-                root=self.data_dir, train=train, download=True, transform=transform
-            )
-        elif self.config.dataset_type.upper() == "FASHIONMNIST":
-            return datasets.FashionMNIST(
-                root=self.data_dir, train=train, download=True, transform=transform
-            )
-        elif self.config.dataset_type.upper() == "CIFAR100":
-            return datasets.CIFAR100(
-                root=self.data_dir, train=train, download=True, transform=transform
-            )
-        elif self.config.dataset_type.upper() == "CUSTOM":
+        # Handle custom dataset
+        elif dataset_type == "CUSTOM":
             # Load custom dataset class
             if not self.config.custom_dataset_path:
                 raise ValueError(
