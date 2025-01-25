@@ -157,8 +157,7 @@ class ModelManager:
         if model_class is None:
             raise ValueError(f"Unknown model type: {self.config.model.name}")
 
-        # Create a copy of model_kwargs to avoid modifying the original configuration
-        model_kwargs = self.config.model.model_kwargs.copy()
+        model_kwargs = self.config.model.model_kwargs
 
         # Handle num_classes
         if "num_classes" in model_kwargs:

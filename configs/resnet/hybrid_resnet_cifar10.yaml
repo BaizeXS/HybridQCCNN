@@ -41,7 +41,7 @@ data:
 model:
   name: "hybrid_resnet18"
   model_type: "hybrid"
-  model_kwargs: null
+  model_kwargs: {}
   quantum_config:
     q_layers: 2
     diff_method: "best"

@@ -41,7 +41,7 @@ data:
 model:
   name: "simple_resnet18"
   model_type: "classic"
-  model_kwargs: null
+  model_kwargs: {}
   quantum_config: null
   custom_model_path: null
 

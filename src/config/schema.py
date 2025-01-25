@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-VALID_DATASET_TYPES = {"MNIST", "CIFAR10", "CUSTOM"}
+VALID_DATASET_TYPES = {"MNIST", "FASHIONMNIST", "CIFAR10", "CIFAR100", "CUSTOM"}
 VALID_MODEL_TYPES = {"classic", "hybrid", "custom"}
 DEFAULT_DEVICE = "cpu"
 DEFAULT_SEED = 42
@@ -194,9 +194,16 @@ class TrainingConfig:
     num_epochs: int = 10
     checkpoint_interval: int = 5
     scheduler_type: str = "StepLR"
-    scheduler_kwargs: Optional[Dict[str, Any]] = field(
+    scheduler_kwargs: Dict[str, Any] = field(
         default_factory=lambda: {"step_size": 30, "gamma": 0.1}
     )
+
+    def __post_init__(self):
+        """Post-initialization processing"""
+        self.learning_rate = float(self.learning_rate)
+        self.weight_decay = float(self.weight_decay)
+        self.num_epochs = int(self.num_epochs)
+        self.checkpoint_interval = int(self.checkpoint_interval)
 
 
 @dataclass

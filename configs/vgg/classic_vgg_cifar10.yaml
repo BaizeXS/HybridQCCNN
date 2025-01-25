@@ -41,7 +41,7 @@ data:
 model:
   name: "SimpleVGG"
   model_type: "classic"
-  model_kwargs: null
+  model_kwargs: {}
   quantum_config: null
   custom_model_path: null
 
