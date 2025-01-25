@@ -1,56 +1,66 @@
 # HybridQCCNN
 
-一个混合量子-经典卷积神经网络(Hybrid Quantum-Classical CNN)的实现。
+HybridQCCNN is a hybrid quantum-classical convolutional neural network framework designed for image classification. It integrates multiple predefined models, supports various quantum simulator backends, and provides rich visualization and analysis tools to facilitate both classical and quantum-enhanced training workflows.
 
-## 简介
+## Table of Contents
 
-HybridQCCNN是一个结合了量子计算和经典深度学习的框架,用于图像分类任务。该项目实现了以下功能:
+- [Overview](#overview)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Common Commands](#common-commands)
+- [Developer Guide](#developer-guide)
+- [Project Structure](#project-structure)
+- [Configuration Files](#configuration-files)
+- [Customization](#customization)
+- [License](#license)
+- [Contributing](#contributing)
+- [Citation](#citation)
 
-1. 支持经典CNN和混合量子-经典CNN的训练与测试
-2. 提供多种预定义模型(VGG、GoogLeNet、ResNet的经典版本和混合版本)
-3. 支持自定义数据集和模型架构
-4. 提供完整的训练过程可视化和模型性能对比工具
-5. 支持多种量子模拟器后端
+## Overview
 
-## 环境配置
+1. Unified training and testing for both classical CNNs and hybrid quantum-classical CNNs
+2. Multiple predefined models (e.g., VGG, GoogLeNet, ResNet) in both classic and quantum-hybrid forms
+3. Support for custom datasets and architectures
+4. Complete training visualization and model performance comparison
+5. Multiple quantum simulators supported (e.g., PennyLane, Qiskit)
 
-### 1. 基础环境要求
+## Installation
+
+### Requirements
 
 - Python >= 3.10
-- CUDA >= 12.1 (可选,用于GPU加速)
-- 操作系统: Linux(推荐)、Windows、macOS
+- (Optional) CUDA >= 12.1 for GPU acceleration
+- OS: Linux (recommended), Windows, macOS
 
-### 2. 安装步骤
+### Steps
 
-#### 2.1 从PyPI安装
+1. **Clone Repository**
 
-```bash
-# 基础安装
-pip install hybridqccnn
+   ```bash
+   git clone https://github.com/BaizeXS/HybridQCCNN.git
+   cd HybridQCCNN
+   ```
 
-# 安装带后端API的版本
-pip install hybridqccnn[backend]
+2. **Create and Activate Environment**
 
-# 安装开发版本(包含测试和开发工具)
-pip install hybridqccnn[all-dev]
-```
+   ```bash
+   conda create -n qml python=3.10
+   conda activate qml
+   ```
 
-#### 2.2 从源码安装
+3. **Install Dependencies**
 
-```bash
-# 克隆仓库
-git clone https://github.com/BaizeXS/HybridQCCNN.git
-cd HybridQCCNN
+   ```bash
+   pip install -e ".[all-dev]"
+   ```
 
-# 创建并激活conda环境
-conda create -n qml python=3.10
-conda activate qml
+4. **Verify Installation**
 
-# 安装依赖
-pip install -e ".[all-dev]"  # 安装所有依赖(包括开发工具)
-```
+   ```bash
+   python -m src.main --help
+   ```
 
-### 3. 核心依赖版本
+### Key Dependencies
 
 - pennylane ~= 0.40.0
 - torch ~= 2.5.1
@@ -62,189 +72,213 @@ pip install -e ".[all-dev]"  # 安装所有依赖(包括开发工具)
 - tensorboard >= 2.18.0
 - qutip ~= 5.1.1
 
-## 使用说明
+## Quick Start
 
-### 1. 模型训练
+Here is a quick demo on how to train and test a hybrid quantum-classical model using `configs/benchmark/hybrid_fashionmnist.yaml`:
+
+1. **Edit Configuration File**
+   Adjust parameters such as batch size and learning rate as needed.
+
+2. **Train Model**
+   ```bash
+   python -m src.main train -c configs/benchmark/hybrid_fashionmnist.yaml
+   ```
+
+3. **Test Model**
+
+   ```bash
+   python -m src.main test -c configs/benchmark/hybrid_fashionmnist.yaml \
+       -w outputs/HybridNet/weights/best_model.pt
+   ```
+
+4. **Predict on a Single Image**
+   ```bash
+   python -m src.main predict -c configs/benchmark/hybrid_fashionmnist.yaml \
+       -w outputs/hybrid_fashionmnist/weights.pth -i path/to/image.jpg
+   ```
+
+## Common Commands
+
+### Training
 
 ```bash
-python -m src.main train -c configs/benchmark/hybrid_fashionmnist.yaml
+python -m src.main train -c <CONFIG> [--checkpoint <CHECKPOINT_PATH>]
 ```
 
-支持的参数:
-- `-c/--config`: 配置文件路径(必需)
-- `--checkpoint`: 检查点文件路径(可选,用于继续训练)
-
-### 2. 模型测试
+### Testing
 
 ```bash
-python -m src.main test -c configs/benchmark/hybrid_fashionmnist.yaml -w path/to/weights.pth
+python -m src.main test -c <CONFIG> -w <WEIGHTS_PATH> [--is-checkpoint]
 ```
 
-支持的参数:
-- `-c/--config`: 配置文件路径(必需)
-- `-w/--weights`: 模型权重文件路径(必需)
-- `--is-checkpoint`: 指定权重文件是否为检查点文件
-
-### 3. 单张图片预测
+### Single Image Prediction
 
 ```bash
-python -m src.main predict -c configs/benchmark/hybrid_fashionmnist.yaml -w path/to/weights.pth -i path/to/image.jpg
+python -m src.main predict -c <CONFIG> -w <WEIGHTS_PATH> -i <IMAGE_PATH> [--is-checkpoint]
 ```
 
-支持的参数:
-- `-c/--config`: 配置文件路径(必需)
-- `-w/--weights`: 模型权重文件路径(必需)
-- `-i/--image`: 待预测图片路径(必需)
-- `--is-checkpoint`: 指定权重文件是否为检查点文件
-
-### 4. 训练指标可视化
+### Visualization of Training Metrics
 
 ```bash
-python -m src.main viz-metrics -f path/to/metrics.json
+python -m src.main viz-metrics -f <METRICS_FILE> [--metric-names <NAMES>] \
+    [--phases <PHASES>] [-o <OUTPUT_DIR>] [--no-show]
 ```
 
-支持的参数:
-- `-f/--file`: 指标文件路径(必需)
-- `--metric-names`: 要可视化的指标名称列表
-- `--phases`: 要可视化的训练阶段列表
-- `-o/--output-dir`: 图像保存目录
-- `--no-show`: 不显示图像
-
-### 5. 多模型性能对比
+### Model Performance Comparison
 
 ```bash
-python -m src.main compare -f metrics1.json metrics2.json
+python -m src.main compare -f <METRICS_FILES>... [--metric-names <NAMES>] \
+    [--model-names <NAMES>] [--phases <PHASES>] [-o <OUTPUT_DIR>] [--no-show]
 ```
 
-支持的参数:
-- `-f/--files`: 多个指标文件路径(必需)
-- `--metric-names`: 要对比的指标名称列表
-- `--model-names`: 要对比的模型名称列表
-- `--phases`: 要对比的训练阶段列表
-- `-o/--output-dir`: 图像保存目录
-- `--no-show`: 不显示图像
+## Developer Guide
 
-## 开发指南
-
-### 1. 开发环境设置
+Install developer tools and set up pre-commit hooks:
 
 ```bash
-# 安装开发依赖
 pip install -e ".[dev]"
-
-# 安装pre-commit hooks
 pre-commit install
 ```
 
-### 2. 代码规范
+### Code Style
 
-本项目使用以下工具确保代码质量：
+- **black**: Code formatter (88-line width)
+- **isort**: Sort import statements
+- **flake8**: Code style checks
+- **pre-commit**: Automates the above checks
 
-- black: 代码格式化(行长度88字符)
-- isort: import语句排序
-- flake8: 代码风格检查
-- pre-commit: 自动运行以上工具
-
-### 3. 测试
+Run tests:
 
 ```bash
-# 运行所有测试
-pytest
-
-# 运行特定类型的测试
-pytest -m "not slow"  # 跳过耗时测试
-pytest -m "not gpu"   # 跳过需要GPU的测试
-pytest -m unit        # 只运行单元测试
+pytest          # Run all tests
+pytest -m unit  # Run only unit tests
 ```
 
-支持的测试标记：
-- slow: 耗时测试
-- gpu: 需要GPU的测试
-- quantum: 使用量子模拟器的测试
-- integration: 集成测试
-- unit: 单元测试
-- heavy_model: 资源密集型模型测试
+Supported markers include `slow`, `gpu`, `quantum`, `integration`, `unit`, and `heavy_model`.
 
-### 4. 项目结构
+## Project Structure
 
 ```
 HybridQCCNN/
-├── src/                # 源代码
-├── tests/             # 测试文件
-├── configs/           # 配置文件
-├── examples/          # 示例代码
-├── docs/              # 文档
-└── datasets/          # 数据集目录
+├── src/                # Source code (models, trainers, utilities)
+├── tests/              # Test files
+├── configs/            # YAML configuration files
+├── examples/           # Example scripts
+├── docs/               # Documentation
+└── datasets/           # Dataset folder
 ```
 
-## 配置文件说明
+## Configuration Files
 
-配置文件采用YAML格式,主要包含以下几个部分:
+Typical YAML configuration includes:
 
 ```yaml
-# 数据集配置
 data:
-  name: "数据集名称"
-  dataset_type: "数据集类型"
-  input_shape: [通道数, 高度, 宽度]
-  num_classes: 类别数
-  dataset_path: "数据集路径"
-  train_split: 训练集比例
-  batch_size: 批次大小
-  # ...
+  name: "DatasetName"
+  dataset_type: "DatasetType"
+  input_shape: [channels, height, width]
+  num_classes: 10
+  dataset_path: "path/to/dataset"
+  train_split: 0.8
+  batch_size: 64
 
-# 模型配置
 model:
-  name: "模型名称"
-  model_type: "模型类型(classic/hybrid)"
-  quantum_config:  # 量子配置(仅hybrid类型需要)
-    q_layers: 量子层数
-    diff_method: "量子梯度计算方法"
-    q_device: "量子设备类型"
-    # ...
+  name: "ModelName"
+  model_type: "classic"  # or "hybrid"
+  quantum_config:
+    q_layers: 2
+    diff_method: "backprop"
+    q_device: "default.qubit"
 
-# 训练配置
 training:
-  learning_rate: 学习率
-  weight_decay: 权重衰减
-  num_epochs: 训练轮数
-  # ...
+  learning_rate: 0.001
+  weight_decay: 1e-4
+  num_epochs: 20
 
-# 其他配置
-device: "cpu/cuda"
-seed: 随机种子
-output_dir: "输出目录"
+device: "cpu"  # or "cuda", "mps"
+seed: 42
+output_dir: "outputs/experiment_name"
 ```
 
-## 自定义扩展
+Create separate YAML files under `configs/` for different models or datasets.
 
-### 1. 添加新的数据集
+## Customization
 
-1. 在`src/datasets`目录下创建新的数据集类
-2. 继承`torch.utils.data.Dataset`
-3. 在`src/utils/data_management.py`中注册新数据集
+### Add a New Dataset
 
-### 2. 添加新的模型架构
+To add a new dataset:
 
-1. 在`src/models`目录下创建新的模型类
-2. 继承`torch.nn.Module`
-3. 在`src/utils/model_management.py`中注册新模型
+1. Create a dataset class file (e.g., `src/datasets/my_dataset.py`) that inherits from `torch.utils.data.Dataset`:
 
-## 许可证
+   ```python
+   from utils.data_management import CustomDataset
 
-本项目采用MIT许可证。详见[LICENSE](LICENSE)文件。
+   class MyDataset(CustomDataset):
+       def _load_data(self):
+           # Implement data loading logic
+           pass
 
-## 贡献指南
+       def __getitem__(self, index):
+           # Implement data retrieval logic
+           pass
+   ```
 
-欢迎提交Issue和Pull Request。在提交代码前,请确保:
+2. In the configuration file, set the dataset parameters:
 
-1. 代码符合项目的代码风格(使用black和flake8)
-2. 添加了适当的测试用例
-3. 更新了相关文档
+   ```yaml
+   data:
+     name: "MyDataset"  # Must match the dataset class name
+     dataset_type: "CUSTOM"  # Must be set to CUSTOM
+     input_shape: [3, 224, 224]  # Adjust based on actual input dimensions
+     num_classes: 10
+     dataset_path: "path/to/dataset"  # Root directory of your dataset
+     custom_dataset_path: "path/to/my_dataset.py"  # File path of the dataset class
+     train_split: 0.8
+     batch_size: 32
+     # Other data configurations...
+   ```
 
-## 引用
+### Add a New Model
 
-如果您在研究中使用了本项目,请引用:
+To add a new model:
+
+1. Create a model class file (e.g., `src/models/my_model.py`) that inherits from `torch.nn.Module`:
+
+   ```python
+   import torch.nn as nn
+
+   class MyModel(nn.Module):
+       def __init__(self, num_classes=10):
+           super().__init__()
+           # Implement your model architecture
+
+       def forward(self, x):
+           # Implement the forward pass
+           return x
+   ```
+
+2. In the configuration file, set the model parameters:
+
+   ```yaml
+   model:
+     name: "MyModel"  # Must match the model class name
+     model_type: "custom"  # Must be set to custom
+     model_kwargs:  # Model initialization parameters
+       num_classes: 10
+       hidden_dim: 128
+     custom_model_path: "path/to/my_model.py"  # File path of the model class
+     quantum_config: null  # Needed only if it's a quantum hybrid model
+   ```
+
+For a complete configuration file example, see `templates/custom_config.yaml`.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute it for both commercial and non-commercial purposes.
+
+## Citation
+
+If this project helps your research, please cite:
 
 ```bibtex
 @software{HybridQCCNN2024,
@@ -254,4 +288,4 @@ output_dir: "输出目录"
   publisher = {GitHub},
   url = {https://github.com/BaizeXS/HybridQCCNN}
 }
-````
+```
