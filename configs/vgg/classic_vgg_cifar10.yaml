@@ -55,6 +55,6 @@ training:
     step_size: 5
     gamma: 0.5
 
-device: "cpu"
+device: "mps"
 seed: 42
 output_dir: "./outputs"
