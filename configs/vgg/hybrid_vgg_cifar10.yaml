@@ -9,9 +9,9 @@ data:
   num_classes: 10
   dataset_path: "datasets"
   train_split: 0.8
-  batch_size: 64
-  num_workers: 4
-  pin_memory: true
+  batch_size: 32
+  num_workers: 2
+  pin_memory: false
   train_transforms:
     - name: "RandomCrop"
       args:
@@ -41,7 +41,10 @@ data:
 model:
   name: "HybridVGG"
   model_type: "hybrid"
-  model_kwargs: {}
+  model_kwargs:
+    output_mode: "quantum"
+    aggregation_method: "mean"
+    preserve_quantum_info: true
   quantum_config:
     q_layers: 2
     diff_method: "best"

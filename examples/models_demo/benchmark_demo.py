@@ -12,7 +12,7 @@ def classic_net_example():
     model = ClassicNet(num_classes=10)
 
     # Create an example input tensor (batch_size, channels, height, width)
-    x = torch.randn(2, 1, 28, 28)  # MNIST format input
+    x = torch.randn(2, 1, 14, 14)  # MNIST format input
 
     # Forward propagation
     output = model(x)
@@ -33,7 +33,7 @@ def hybrid_net_basic_example():
     )
 
     # Create an example input tensor
-    x = torch.randn(2, 1, 28, 28)  # MNIST format input
+    x = torch.randn(2, 1, 14, 14)  # MNIST format input
 
     # Forward propagation
     output = model(x)
@@ -52,7 +52,7 @@ def hybrid_net_classical_mode_example():
         aggregation_method=AggregationMethod.WEIGHTED,
     )
 
-    x = torch.randn(2, 1, 28, 28)
+    x = torch.randn(2, 1, 14, 14)
     output = model(x)
     print(f"Input shape: {x.shape}")
     print(f"Output shape: {output.shape}")
@@ -67,7 +67,7 @@ def compare_models_example():
     hybrid_model = HybridNet(num_classes=10)
 
     # Create the same input
-    x = torch.randn(2, 1, 28, 28)
+    x = torch.randn(2, 1, 14, 14)
 
     # Get the outputs from the two models
     classic_output = classic_model(x)

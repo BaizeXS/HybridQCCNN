@@ -9,9 +9,9 @@ data:
   num_classes: 10
   dataset_path: "datasets"
   train_split: 0.8
-  batch_size: 64
-  num_workers: 4
-  pin_memory: true
+  batch_size: 32
+  num_workers: 2
+  pin_memory: false
   train_transforms:
     - name: "RandomCrop"
       args:
@@ -41,7 +41,7 @@ data:
 model:
   name: "SimpleGoogLeNet"
   model_type: "classic"
-  model_kwargs: 
+  model_kwargs:
     aux_logits: true
     dropout: 0.3
     dropout_aux: 0.4

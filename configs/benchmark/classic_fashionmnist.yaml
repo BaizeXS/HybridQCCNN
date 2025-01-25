@@ -9,22 +9,31 @@ data:
   num_classes: 10
   dataset_path: "datasets"
   train_split: 0.8
-  batch_size: 64
-  num_workers: 4
-  pin_memory: true
+  batch_size: 32
+  num_workers: 2
+  pin_memory: false
   train_transforms:
+    - name: "Resize"
+      args:
+        size: [14, 14]
     - name: "ToTensor"
     - name: "Normalize"
       args:
         mean: [0.2860]
         std: [0.3530]
   val_transforms:
+    - name: "Resize"
+      args:
+        size: [14, 14]
     - name: "ToTensor"
     - name: "Normalize"
       args:
         mean: [0.2860]
         std: [0.3530]
   test_transforms:
+    - name: "Resize"
+      args:
+        size: [14, 14]
     - name: "ToTensor"
     - name: "Normalize"
       args:
@@ -50,6 +59,6 @@ training:
     step_size: 5
     gamma: 0.5
 
-device: "cpu"
+device: "mps"
 seed: 42
 output_dir: "./outputs"

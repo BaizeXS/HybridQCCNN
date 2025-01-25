@@ -8,8 +8,8 @@ from models.benchmark import ClassicNet, HybridNet
 TEST_PARAMS = {
     "batch_size": 2,
     "channels": 1,
-    "height": 28,
-    "width": 28,
+    "height": 14,
+    "width": 14,
     "num_classes": 10,
 }
 

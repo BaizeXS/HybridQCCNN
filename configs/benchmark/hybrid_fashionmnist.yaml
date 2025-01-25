@@ -9,22 +9,31 @@ data:
   num_classes: 10
   dataset_path: "datasets"
   train_split: 0.8
-  batch_size: 64
-  num_workers: 4
-  pin_memory: true
+  batch_size: 32
+  num_workers: 2
+  pin_memory: false
   train_transforms:
+    - name: "Resize"
+      args:
+        size: [14, 14]
     - name: "ToTensor"
     - name: "Normalize"
       args:
         mean: [0.2860]
         std: [0.3530]
   val_transforms:
+    - name: "Resize"
+      args:
+        size: [14, 14]
     - name: "ToTensor"
     - name: "Normalize"
       args:
         mean: [0.2860]
         std: [0.3530]
   test_transforms:
+    - name: "Resize"
+      args:
+        size: [14, 14]
     - name: "ToTensor"
     - name: "Normalize"
       args:
@@ -36,18 +45,21 @@ data:
 model:
   name: "HybridNet"
   model_type: "hybrid"
-  model_kwargs: {}
+  model_kwargs:
+    output_mode: "quantum"
+    aggregation_method: "mean"
+    preserve_quantum_info: true
   quantum_config:
     q_layers: 2
-    diff_method: "best"
-    q_device: "default.qubit"
+    diff_method: "adjoint"
+    q_device: "lightning.qubit"
     q_device_kwargs: null
   custom_model_path: null
 
 training:
   learning_rate: 1e-3
   weight_decay: 1e-4
-  num_epochs: 10
+  num_epochs: 1
   checkpoint_interval: 1
   scheduler_type: "StepLR"
   scheduler_kwargs:
