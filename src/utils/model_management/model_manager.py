@@ -36,6 +36,9 @@ class ModelManager:
         writer (SummaryWriter): TensorBoard writer.
         metrics (dict): Dictionary storing training/validation/test metrics.
         conf_matrices (dict): Dictionary storing confusion matrices.
+        optimizer (torch.optim.Optimizer): The optimizer to be used during training.
+        scheduler (torch.optim.lr_scheduler._LRScheduler): The learning rate
+            scheduler, or None if not configured.
     """
 
     def __init__(self, config: Config, model_name: str = "default"):
@@ -79,6 +82,10 @@ class ModelManager:
 
         # Initialize TensorBoard
         self.writer = SummaryWriter(self.tensorboard_dir)
+
+        # Initialize optimizer and scheduler
+        self.optimizer = self._create_optimizer()
+        self.scheduler = self._create_scheduler()
 
     def _init_directories(self):
         """Set up model directory structure."""
@@ -171,6 +178,31 @@ class ModelManager:
 
         return model_class(**model_kwargs)
 
+    def _create_optimizer(self):
+        """Create optimizer instance.
+
+        Returns:
+            torch.optim.Optimizer: The optimizer instance.
+        """
+        return torch.optim.Adam(
+            self.model.parameters(),
+            lr=self.config.training.learning_rate,
+            weight_decay=self.config.training.weight_decay,
+        )
+
+    def _create_scheduler(self):
+        """Create learning rate scheduler instance.
+
+        Returns:
+            torch.optim.lr_scheduler._LRScheduler: The learning rate scheduler instance.
+        """
+        if not self.config.training.scheduler_kwargs:
+            return None
+        return torch.optim.lr_scheduler.StepLR(
+            self.optimizer,
+            **self.config.training.scheduler_kwargs,
+        )
+
     @staticmethod
     def _get_criterion():
         """Get loss function.
@@ -179,31 +211,6 @@ class ModelManager:
             nn.Module: The loss function to be used during training.
         """
         return torch.nn.CrossEntropyLoss()
-
-    def _get_optimizer(self):
-        """Get optimizer.
-
-        Returns:
-            torch.optim.Optimizer: The optimizer to be used during training.
-        """
-        return torch.optim.Adam(
-            self.model.parameters(),
-            lr=self.config.training.learning_rate,
-            weight_decay=self.config.training.weight_decay,
-        )
-
-    def _get_scheduler(self):
-        """Get learning rate scheduler.
-
-        Returns:
-            Optional[torch.optim.lr_scheduler._LRScheduler]: The learning rate
-            scheduler, or None if not configured.
-        """
-        if not self.config.training.scheduler_kwargs:
-            return None
-        return torch.optim.lr_scheduler.StepLR(
-            self._get_optimizer(), **self.config.training.scheduler_kwargs
-        )
 
     def train(
         self,
@@ -221,8 +228,8 @@ class ModelManager:
         trainer = Trainer(
             model=self.model,
             criterion=self._get_criterion(),
-            optimizer=self._get_optimizer(),
-            scheduler=self._get_scheduler(),  # type: ignore
+            optimizer=self.optimizer,
+            scheduler=self.scheduler,  # type: ignore
             device=str(self.device),
             logger=self.logger,
             **kwargs,
@@ -263,7 +270,8 @@ class ModelManager:
         trainer = Trainer(
             model=self.model,
             criterion=self._get_criterion(),
-            optimizer=self._get_optimizer(),
+            optimizer=self.optimizer,
+            scheduler=self.scheduler,  # type: ignore
             device=str(self.device),
         )
         test_metrics, conf_matrix = trainer.evaluate(test_loader)
@@ -299,13 +307,12 @@ class ModelManager:
         checkpoint = {
             "epoch": epoch,
             "model_state_dict": self.model.state_dict(),
-            "optimizer_state_dict": self._get_optimizer().state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
         }
 
         # Save scheduler state if it exists
-        scheduler = self._get_scheduler()
-        if scheduler is not None:
-            checkpoint["scheduler_state_dict"] = scheduler.state_dict()
+        if self.scheduler is not None:
+            checkpoint["scheduler_state_dict"] = self.scheduler.state_dict()
 
         # Save latest checkpoint
         checkpoint_path = self.checkpoint_dir / f"checkpoint_epoch_{epoch}.pt"
@@ -356,15 +363,17 @@ class ModelManager:
             if not all(key in checkpoint for key in required_keys):
                 raise RuntimeError("Checkpoint file is corrupted or invalid")
 
+            # Load model state
             self.model.load_state_dict(checkpoint["model_state_dict"])
-            if "optimizer_state_dict" in checkpoint:
-                self._get_optimizer().load_state_dict(
-                    checkpoint["optimizer_state_dict"]
-                )
-            if "scheduler_state_dict" in checkpoint:
-                scheduler = self._get_scheduler()
-                if scheduler is not None:
-                    scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+            # Load optimizer state
+            if self.optimizer is None:
+                self.optimizer = self._create_optimizer()
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+            # Load scheduler state
+            if "scheduler_state_dict" in checkpoint and self.scheduler is not None:
+                self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
 
             return checkpoint["epoch"]
         except Exception as e:

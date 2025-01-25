@@ -25,7 +25,7 @@ from utils.visualization import MetricsPlotter
 
 # Set up logging
 logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -427,7 +427,7 @@ def main():
         logger.info("Program interrupted by user")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Program execution error: {str(e)}", exc_info=True)
+        logger.error(f"Program execution error: {str(e)}")
         sys.exit(1)
 
 
